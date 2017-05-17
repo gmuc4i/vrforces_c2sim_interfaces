@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OrderPushIBML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://netlab.gmu.edu/IBML ../BMLC2GUI_REST_Support/Schema/IBML_09/IBMLOrderPushPulls.xsd"
+ xmlns="http://netlab.gmu.edu/IBML">
+    <OrderPush>
+        <TaskersIntent>RELOCATE</TaskersIntent>
+        <Task>
+            <GroundTask>
+                <TaskeeWho>
+                    <UnitID>ExampleUnit</UnitID>
+                </TaskeeWho>
+                <What>
+                    <WhatCode>MOVE</WhatCode>
+                </What>
+                <Where>
+                    <WhereID>ROUTE</WhereID>
+                    <AtWhere>
+                        <JBMLAtWhere>
+                            <WhereLabel>ROUTE</WhereLabel>
+                            <WhereCategory>ROUTE</WhereCategory>
+                            <WhereClass>LN</WhereClass>
+                            <WhereValue>
+                                <WhereLocation Sequence="0">
+                                    <GDC>
+                                        <Latitude>36.004755</Latitude>
+        				<Longitude>-122.994539</Longitude>
+        				<ElevationAGL>0.0</ElevationAGL>
+                                    </GDC>
+                                </WhereLocation>
+                                <WhereLocation Sequence="1">
+                                    <GDC>
+                                        <Latitude>36.013731</Latitude>
+        				<Longitude>-122.989015</Longitude>
+        				<ElevationAGL>0.0</ElevationAGL>
+                                    </GDC>
+                                </WhereLocation>
+                                <WhereLocation Sequence="2">
+                                    <GDC>
+                                        <Latitude>36.004769</Latitude>
+        				<Longitude>-122.988993</Longitude>
+        				<ElevationAGL>0.0</ElevationAGL>
+                                    </GDC>
+                                </WhereLocation>
+                            </WhereValue>
+                            <WhereQualifier>ALONG</WhereQualifier>
+                        </JBMLAtWhere>
+                    </AtWhere>
+                </Where>
+                <StartWhen>
+                    <WhenTime>
+                        <StartTimeQualifier>AT</StartTimeQualifier>
+                        <DateTime>20170308131909.000</DateTime>
+                    </WhenTime>
+                </StartWhen>
+                <TaskID>MOVE EXAMPLE UNIT</TaskID>
+            </GroundTask>
+        </Task>
+        <OrderIssuedWhen>20170320620139.000</OrderIssuedWhen>
+        <OrderID>EXAMPLE ORDER</OrderID>
+        <TaskerWho>
+            <UnitID>THE BOSS</UnitID>
+        </TaskerWho>
+    </OrderPush>
+</OrderPushIBML>
