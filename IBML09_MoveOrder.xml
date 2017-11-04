@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<OrderPushIBML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:schemaLocation="http://netlab.gmu.edu/IBML ../BMLC2GUI_REST_Support/Schema/IBML_09/IBMLOrderPushPulls.xsd"
- xmlns="http://netlab.gmu.edu/IBML">
-    <OrderPush>
-        <TaskersIntent>RELOCATE</TaskersIntent>
+<OrderPushIBML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"    
+    xsi:schemaLocation="http://netlab.gmu.edu/IBML /Users/jmarkpullen/Desktop/SandboxTech/workingGUI/BMLC2GUI/IITSEC/Schema/IBML_09/IBMLOrderPushPulls.xsd"
+    xmlns:ibml="http://netlab.gmu.edu/IBML">
+    <OrderPush><!-- was OrderPush-->
+        <TaskersIntent>CAPTRD</TaskersIntent>
         <Task>
             <GroundTask>
                 <TaskeeWho>
-                    <UnitID>ExampleUnit</UnitID>
+                    <UnitID>1/A</UnitID>
                 </TaskeeWho>
                 <What>
-                    <WhatCode>MOVE</WhatCode>
+                    <WhatCode>ATTMN</WhatCode>
                 </What>
                 <Where>
                     <WhereID>ROUTE</WhereID>
@@ -22,23 +22,23 @@
                             <WhereValue>
                                 <WhereLocation Sequence="0">
                                     <GDC>
-                                        <Latitude>36.004755</Latitude>
-        				<Longitude>-122.994539</Longitude>
-        				<ElevationAGL>0.0</ElevationAGL>
+                                      <Latitude>36.009106</Latitude>
+                                      <Longitude>-122.988997</Longitude>
+                                      <ElevationAGL>0.0</ElevationAGL>
                                     </GDC>
                                 </WhereLocation>
                                 <WhereLocation Sequence="1">
                                     <GDC>
-                                        <Latitude>36.013731</Latitude>
-        				<Longitude>-122.989015</Longitude>
-        				<ElevationAGL>0.0</ElevationAGL>
+                                        <Latitude>36.013628</Latitude>
+                                        <Longitude>-122.983343</Longitude>
+                                        <ElevationAGL>0.0</ElevationAGL>
                                     </GDC>
                                 </WhereLocation>
                                 <WhereLocation Sequence="2">
                                     <GDC>
-                                        <Latitude>36.004769</Latitude>
-        				<Longitude>-122.988993</Longitude>
-        				<ElevationAGL>0.0</ElevationAGL>
+                                        <Latitude>36.009106</Latitude>
+                                        <Longitude>-122.983343</Longitude>
+                                        <ElevationAGL>0.0</ElevationAGL>
                                     </GDC>
                                 </WhereLocation>
                             </WhereValue>
