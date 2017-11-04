@@ -138,12 +138,10 @@ unsigned int DtTextInterface::theNextSubordinateId = 1;
 
 std::string ibml09GSRpart1(
 	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-	"<bml:BMLReport xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
-	"xsi:schemaLocation=\"http://www.sisostds.org/schemas/c-bml/1.0"
-	"/Users/jmarkpullen/Desktop/SandboxTech/workingGUI/BMLC2GUI/IITSEC/Schema/IBML_09/IBMLReports.xsd\"\n"
-	"xmlns:jc3iedm=\"urn:int:nato:standard:mip:jc3iedm:3.1a:oo:2.0\"\n"
-	"xmlns:bml=\"http://netlab.gmu.edu/IBML\"\n"
-	"xmlns:msdl=\"http://netlab.gmu.edu/JBML/MSDL\">\n"
+	"<bml:BMLReport xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n"
+	"xmlns:jc3iedm=\"urn:int:nato:standard:mip:jc3iedm:3.1a:oo:2.0\" \n"
+	"xmlns:bml=\"http://netlab.gmu.edu/IBML\" \n"
+	"xmlns:msdl=\"http://netlab.gmu.edu/JBML/MSDL\"> \n"
 	"<bml:Report>\n"
 	"<bml:CategoryOfReport>StatusReport</bml:CategoryOfReport>\n"
 	"<bml:TypeOfReport>GeneralStatusReport</bml:TypeOfReport>\n"
