@@ -59,8 +59,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\examples\remoteControlTriangle\build64\Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\remoteControlDIS.dir\Debug</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\build64\Debug</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\remoteControlDIS.dir\Debug</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">c2simInterface</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
@@ -85,13 +85,13 @@
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\bin\xerces-c_3_1D.dll;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\bin;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc;C:\Users\c2sim\Documents\VR-Forces\Source Code\vrlj\com\mak\vrlj\object;C:\Users\c2sim\Documents\VR-Forces\Source Code;C:\Users\c2sim\workspace\VR-Link Program\lib;C:\Users\c2sim\workspace\VR-Link Program\lib\BML_Clients;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\bin;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\cpprest\x64;C:\Users\c2sim\workspace\VR-Link Program\lib\BML_Clients;C:\Users\c2sim\workspace\VR-Link Program\lib;C:\Users\c2sim\Documents\VR-Forces\Source Code;C:\Users\c2sim\Documents\VR-Forces\Source Code\vrlj\com\mak\vrlj\object;$(LibraryPath)</LibraryPath>
-    <ExecutablePath>C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\bin;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>C:\MAK\vrforces4.4.2\lib64;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>C:\MAK\vrforces4.4.2\bin64;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\include\xercesc;C:\Users\c2sim\workspace\VR-Link Program\lib\BML_Clients;../../include;$(MAK_VRLDIR)/include;$(MAK_RTIDIR)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\MAK\vrforces4.4.2\include;C:\MAK\vrlink5.3.1/include;C:\MAK\makRti4.4.1/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <CompileAs>CompileAsCpp</CompileAs>
@@ -124,16 +124,7 @@
       <Message>
       </Message>
       <Command>setlocal
-echo xcopy "$(TargetPath)" ..\..\bin64 /y /q
-if %errorlevel% neq 0 goto :cmEnd
-:cmEnd
-endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
-:cmErrorLevel
-exit /b %1
-:cmDone
-if %errorlevel% neq 0 goto :VCEnd
-setlocal
-xcopy "$(TargetPath)" ..\..\bin64 /y /q
+xcopy "C:\MAK\vrforces4.4.2\examples\C2SIM\build64\Debug\c2simInterface.exe" C:\MAK\vrforces4.4.2\bin64 /y /q
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -144,13 +135,13 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </PostBuildEvent>
     <Link>
       <AdditionalOptions> /machine:x64 /debug %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\lib\xerces-c_3.lib;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\lib\xerces-c_static_3.lib;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\cpprest\x64\Debug\cpprest140d_2_9.lib;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\lib\xerces-c_3D.lib;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\xercesc\lib\xerces-c_static_3D.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;vrfmsgsd.lib;vrfutild.lib;vrftasksd.lib;vrfcontrolDISd.lib;vrfpland.lib;vlutild.lib;matrixd.lib;mtld.lib;vlDISd.lib;vld.lib;vrfExtProtocold.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\c2sim\workspace\VR-Link Program\lib\BML_Clients;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\cpprest\x64\Debug;../../lib64;../../lib64/$(Configuration);$(MAK_VRLDIR)/lib64;C:\MAK\vrforces4.4.2\examples\remoteControlTriangle\cpprest\x64;$(MAK_VRLDIR)/lib64/$(Configuration);/lib;/lib/$(Configuration);/lib64;/lib64/$(Configuration);../../lib;../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>C:\MAK\vrforces4.4.2\lib64\xerces-c_3.lib;C:\MAK\vrforces4.4.2\lib64\xerces-c_static_3.lib;C:\MAK\vrforces4.4.2\lib64\cpprest140d_2_9.lib;C:\MAK\vrforces4.4.2\lib64\xerces-c_3D.lib;C:\MAK\vrforces4.4.2\lib64\xerces-c_static_3D.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;vrfmsgsd.lib;vrfutild.lib;vrftasksd.lib;vrfcontrolDISd.lib;vrfpland.lib;vlutild.lib;matrixd.lib;mtld.lib;vlDISd.lib;vld.lib;vrfExtProtocold.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\MAK\vrforces4.4.2\lib64;C:\MAK\vrforces4.4.2/lib64/$(Configuration);C:\MAK\vrlink5.3.1/lib64;C:\MAK\vrlink5.3.1/lib64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>../../examples/remoteControlTriangle/build64/Debug/remoteControlDISd.lib</ImportLibrary>
       <LargeAddressAware>true</LargeAddressAware>
-      <ProgramDataBaseFile>../../examples/remoteControlTriangle/build64/Debug/remoteControlDISd.pdb</ProgramDataBaseFile>
+      <ProgramDataBaseFile>../../build64/Debug/remoteControlDISd.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
       </Version>
