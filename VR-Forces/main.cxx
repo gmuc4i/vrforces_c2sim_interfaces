@@ -35,6 +35,7 @@ int main(int argc, char** argv)
 {
    std::cout << "Starting VR-Forces C2SIM Interface\n";
    std::cout << argc << " " << argv[1];
+   std::cout << "Terrain:" << argv[2];
    
    //Create initializer object used to provide initialization data to the
    //exercise connection, configured through command line arugments.

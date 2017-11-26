@@ -14,17 +14,20 @@ char startTag[100];
 char endTag[100];
 char previousTag[100];
 char dataText[100];
-char taskersIntent[100];
-char dateTime[100];
-char latitude1[100];
-char longitude1[100]; 
-char elevationAgl1[100];
-char latitude2[100];
-char longitude2[100];
+char taskersIntent[100] = "";
+char dateTime[100] = "";
+char latitude1[100] = "";
+char longitude1[100] = "";
+char elevationAgl1[100] = "";
+char latitude2[100] = "";
+char longitude2[100] = "";
 char elevationAgl2[100];
-char latitude3[100];
-char longitude3[100];
-char elevationAgl3[100];
+char latitude3[100] = "";
+char longitude3[100] = "";
+char elevationAgl3[100] = "";
+char latitude4[100] = "";
+char longitude4[100] = "";
+char elevationAgl4[100] = "";
 
 char unitID[100];
 bool foundTaskersIntent = false;
@@ -38,6 +41,9 @@ bool foundElevationAgl2 = false;
 bool foundLatitude3 = false;
 bool foundLongitude3 = false;
 bool foundElevationAgl3 = false;
+bool foundLatitude4 = false;
+bool foundLongitude4 = false;
+bool foundElevationAgl4 = false;
 bool foundUnitID = false;
 bool foundRootTag = false;
 bool foundFinalTag = false;
@@ -63,6 +69,9 @@ C2SIMHandler::C2SIMHandler()
 	latitude3[0] = '\0';
 	longitude3[0] = '\0';
 	elevationAgl3[0] = '\0';
+	latitude4[0] = '\0';
+	longitude4[0] = '\0';
+	elevationAgl4[0] = '\0';
 	unitID[0] = '\0';
 }
 
@@ -72,10 +81,10 @@ C2SIMHandler::~C2SIMHandler()
 }
 
 // called by C2SIMinterface to start parse of C2SIM document type
-void C2SIMHandler::startC2SIMParse(char* newRootTag)
+void C2SIMHandler::startC2SIMParse(std::string newRootTag)
 {	
 	// accept root tag for this parse
-	strncpy(rootTag, newRootTag, maxCharLength);
+	strncpy(rootTag, newRootTag.c_str(), maxCharLength);
 
 	// reset logical flags
 	foundRootTag = false;
@@ -91,6 +100,9 @@ void C2SIMHandler::startC2SIMParse(char* newRootTag)
 	foundLatitude3 = false;
 	foundLongitude3 = false;
 	foundElevationAgl3 = false;
+	foundLatitude4 = false;
+	foundLongitude4 = false;
+	foundElevationAgl4 = false;
 	foundUnitID = false;
 }
 
@@ -108,6 +120,9 @@ bool C2SIMHandler::returnData(
 	char* returnLatitude3,
 	char* returnLongitude3,
 	char* returnElevationAgl3,
+	char* returnLatitude4,
+	char* returnLongitude4,
+	char* returnElevationAgl4,
 	char* returnUnitID) {
 	if (!foundRootTag)return false;
 	strncpy(returnTaskersIntent, taskersIntent, maxCharLength);
@@ -121,6 +136,9 @@ bool C2SIMHandler::returnData(
 	strncpy(returnLatitude3, latitude3, maxCharLength);
 	strncpy(returnLongitude3, longitude3, maxCharLength);
 	strncpy(returnElevationAgl3, elevationAgl3, maxCharLength);
+	strncpy(returnLatitude4, latitude4, maxCharLength);
+	strncpy(returnLongitude4, longitude4, maxCharLength);
+	strncpy(returnElevationAgl4, elevationAgl4, maxCharLength);
 	strncpy(returnUnitID, unitID, maxCharLength);
 	return true;
 }
@@ -197,50 +215,77 @@ void C2SIMHandler::characters(
 	if (!foundTaskersIntent && strncmp(latestTag, "TaskersIntent", maxCharLength) == 0) {
 		foundTaskersIntent = true;
 		strncpy(taskersIntent, dataText, maxCharLength);
+		std::cout << "PARSE TaskersIntent:" << taskersIntent << "\n";
 	}
 	else if (!foundUnitID && strncmp(latestTag, "UnitID", maxCharLength) == 0) {
 		foundUnitID = true;
 		strncpy(unitID, dataText, maxCharLength);
+		std::cout << "PARSE UnitID:" << unitID << "\n";
 	}
 	else if (!foundLatitude1 && strncmp(latestTag, "Latitude", maxCharLength) == 0) {
 		foundLatitude1 = true;
 		strncpy(latitude1, dataText, maxCharLength);
+		std::cout << "PARSE Latitude1:" << latitude1 << "\n";
 	}
 	else if (!foundLongitude1 && strncmp(latestTag, "Longitude", maxCharLength) == 0) {
 		foundLongitude1 = true;
 		strncpy(longitude1, dataText, maxCharLength);
+		std::cout << "PARSE Longitude1:" << longitude1 << "\n";
 	}
 	else if (!foundElevationAgl1 && strncmp(latestTag, "ElevationAGL", maxCharLength) == 0) {
 		foundElevationAgl1 = true;
 		strncpy(elevationAgl1, dataText, maxCharLength);
+		std::cout << "PARSE ElevationAGL1:" << elevationAgl1 << "\n";
 	}
 	else if (!foundLatitude2 && strncmp(latestTag, "Latitude", maxCharLength) == 0) {
 		foundLatitude2 = true;
 		strncpy(latitude2, dataText, maxCharLength);
+		std::cout << "PARSE Latitude2:" << latitude2 << "\n";
 	}
 	else if (!foundLongitude2 && strncmp(latestTag, "Longitude", maxCharLength) == 0) {
 		foundLongitude2 = true;
 		strncpy(longitude2, dataText, maxCharLength);
+		std::cout << "PARSE Longitude2:" << longitude2 << "\n";
 	}
 	else if (!foundElevationAgl2 && strncmp(latestTag, "ElevationAGL", maxCharLength) == 0) {
 		foundElevationAgl2 = true;
 		strncpy(elevationAgl2, dataText, maxCharLength);
+		std::cout << "PARSE ElevationAGL2:" << elevationAgl2 << "\n";
 	}
 	else if (!foundLatitude3 && strncmp(latestTag, "Latitude", maxCharLength) == 0) {
 		foundLatitude3 = true;
 		strncpy(latitude3, dataText, maxCharLength);
+		std::cout << "PARSE Latitude3:" << latitude3 << "\n";
 	}
 	else if (!foundLongitude3 && strncmp(latestTag, "Longitude", maxCharLength) == 0) {
 		foundLongitude3 = true;
 		strncpy(longitude3, dataText, maxCharLength);
+		std::cout << "PARSE Longitude3:" << longitude3 << "\n";
 	}
 	else if (!foundElevationAgl3 && strncmp(latestTag, "ElevationAGL", maxCharLength) == 0) {
 		foundElevationAgl3 = true;
 		strncpy(elevationAgl3, dataText, maxCharLength);
+		std::cout << "PARSE ElevationAGL3:" << elevationAgl3 << "\n";
+	}
+	else if (!foundLatitude4 && strncmp(latestTag, "Latitude", maxCharLength) == 0) {
+		foundLatitude4 = true;
+		strncpy(latitude4, dataText, maxCharLength);
+		std::cout << "PARSE Latitude4:" << latitude4 << "\n";
+	}
+	else if (!foundLongitude4 && strncmp(latestTag, "Longitude", maxCharLength) == 0) {
+		foundLongitude4 = true;
+		strncpy(longitude4, dataText, maxCharLength);
+		std::cout << "PARSE Longitude4:" << longitude4 << "\n";
+	}
+	else if (!foundElevationAgl4 && strncmp(latestTag, "ElevationAGL", maxCharLength) == 0) {
+		foundElevationAgl4 = true;
+		strncpy(elevationAgl4, dataText, maxCharLength);
+		std::cout << "PARSE ElevationAGL4:" << elevationAgl4 << "\n";
 	}
 	else if (!foundDateTime && strncmp(latestTag, "DateTime", maxCharLength) == 0) {
 		foundDateTime = true;
 		strncpy(dateTime, dataText, maxCharLength);
+		std::cout << "PARSE DateTime:" << dateTime << "\n";
 	}
 	else dataText[0] = '\0';
 

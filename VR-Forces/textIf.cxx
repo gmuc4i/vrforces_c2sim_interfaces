@@ -174,7 +174,6 @@ std::string ibml09GSRpart5(
 	"</bml:GeneralStatusReport></bml:StatusReport></bml:Report></bml:BMLReport>");
 
 // send REST message
-std::string reply;
 void sendRest(std::string report) {
 	
 	// make a RestClient and use it to send transaction
@@ -209,6 +208,7 @@ void reportCallback(const DtVrfObjectMessage* msg, void* usr)
 					msg->transmitter().markingText().c_str());
 				printf("   Task type completed: %s\n",
 					taskCompleteReport->taskCompleted().string().c_str());
+				C2SIMinterface::moveTaskQueueCommandsToCommandQueue();
 			}
 		}
 		else if (msgType.string() == textTypeString)
@@ -1227,7 +1227,7 @@ void DtTextInterface::readCommand()
 		 // for new terrain database, wait until VR-Forces has processed the command
 		 // (timeout of 10 seconds)
 		 if (strncmp(buff, "new", 3) == 0) {
-			 int countdown = 5000; //milliseconds
+			 int countdown = 10000; //milliseconds
 			 while (countdown-- > 0) {
 				 if (cs2sim_controller->allBackendsReady())break;
 				 DtSleep(.001);

@@ -29,9 +29,9 @@ class C2SIMHandler : public HandlerBase
 public:
 	C2SIMHandler();
 	~C2SIMHandler();
-	void startC2SIMParse(char* newRootTag);
+	void startC2SIMParse(std::string newRootTag);
 	bool returnData(char*, char*, char*, char*, char*, char*, char*, 
-		char*, char*, char*, char*, char*, char*);
+		char*, char*, char*, char*, char*, char*, char*, char*, char*);
 	void startElement(const XMLCh* const, AttributeList&);
 	void fatalError(const SAXParseException&);
 	void startDocument();

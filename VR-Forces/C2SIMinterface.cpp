@@ -57,7 +57,8 @@ using namespace xercesc;
 
 // globals
 boost::asio::ip::tcp::iostream stompStream;
-std::queue<char*> commandQueue;
+std::queue<string> commandQueue;
+std::queue<string> taskQueue;
 static int timesCalled = 0;
 DtVrfRemoteController* cs2sim_controller;
 SAXParser* parser;
@@ -65,11 +66,14 @@ C2SIMHandler* c2simHandler;
 ErrorHandler* errHandler;
 std::string stompServerAddress;
 static char rootElement[100];
+static string vrfTerrain;
 
 
 // constructor
 C2SIMinterface::C2SIMinterface(
-	DtVrfRemoteController* controller, std::string serverAddressRef, char* orderXmlRootElement)
+	DtVrfRemoteController* controller, 
+	std::string serverAddressRef, 
+	char* orderXmlRootElement)
 {	
 	// pick up command-line arguments from main()
 	cs2sim_controller = controller;
@@ -134,24 +138,27 @@ C2SIMinterface::~C2SIMinterface( ){
 	client->disconnect();
 	XMLPlatformUtils::Terminate();
 }
-
 // coordinate conversions
 // GDC: lat/lon in degrees; alt in meters
 // geocentric: x/y/z in meters from center of earth
-// NOTE: VRFOrces uses radian angles; we convert here
+// NOTE: VRForces uses radian angles; we convert here
 double degreesToRadians = 57.2957795131L;
-std::string C2SIMinterface::doubleToString(double d) {
+std::string doubleToString(double d) {
 	std::ostringstream oss;
 	oss << d;
 	return oss.str();
+}
+double stringToDouble(std::string s) {
+	double d = atof(s.c_str());
+	return d;
 }
 void C2SIMinterface::geodeticToGeocentric(char* lat, char* lon, char* alt,
 	std::string &x, std::string &y, std::string &z) {
 
 	// convert to geocentric
 	DtGeodeticCoord geod(
-		stod(lat)/degreesToRadians,
-		stod(lon)/degreesToRadians, 
+		stod(lat) / degreesToRadians,
+		stod(lon) / degreesToRadians,
 		stod(alt));
 	DtVector geoc = geod.geocentric();
 
@@ -174,6 +181,7 @@ void C2SIMinterface::geocentricToGeodetic(std::string x, std::string y, std::str
 	alt = doubleToString(geod.alt());
 }
 
+
 // read from queue of commands produced by readStomp 
 // in C2SIM interface this replaces types input reader
 // C2SIMinterface::non_blocking_stdin_fgets()
@@ -181,7 +189,8 @@ char* C2SIMinterface::non_blocking_C2SIM_fgets(
 	char* buffer, 
 	int bufferSize)
 {
-	char* nextCommand;
+	string nextCommand;
+
 	if (timesCalled++ > 2)// ignore first two calls - they have junk
 	{
 		//If queue is empty, return NULL to caller
@@ -190,22 +199,19 @@ char* C2SIMinterface::non_blocking_C2SIM_fgets(
 		// pull a command off of the queue and copy it for caller
 		nextCommand = commandQueue.front();
 		commandQueue.pop();
-		if (strlen(nextCommand) > bufferSize - 1) {
-			std::cout << "error:command length over buffer size (" <<
+		if (nextCommand.length() > bufferSize - 1) {
+			std::cout << "error:command length over command buffer size (" <<
 			bufferSize << "}:" << nextCommand;
 			buffer[0] = '\0';
 		}
-		else strncpy(buffer, nextCommand, bufferSize);
+		else strncpy(buffer, nextCommand.c_str(), bufferSize);
 
 		// free the original and return the copy
 		// (necessary since gettok modifies its argument)
 		std::cout << "dequeue:" << buffer << "\n";//debugx
-		delete nextCommand;
 		return buffer;
 	}
-	
-	// first times called just delay
-	DtSleep(1.0);
+
 	return false;
   
 }// end non_blocking_C2SIM_fgets()
@@ -213,27 +219,44 @@ char* C2SIMinterface::non_blocking_C2SIM_fgets(
 
 // push a string command into the commandQueue
 void C2SIMinterface::pushCommandToQueue(std::string command) {
-	char* charCommand;
 	
 	// if the command does not end with \n, insert it
-	if (command.back() != '\n') {
-		string commandPlusSlashN = command.append("\n");
-		charCommand = new char[commandPlusSlashN.length()+1];
-		std::strcpy(charCommand, commandPlusSlashN.c_str());
-	}
-	else
-	{
-		charCommand = new char[command.length() + 1];
-		std::strcpy(charCommand, command.c_str());
-	}
+	if (command.back() != '\n')command.append("\n");
 
-	cout << "queue:" << charCommand << "\n";//debugx
-	commandQueue.push(charCommand);
+	cout << "push to command queue:" << command << "\n";//debugx
+	commandQueue.push(command);
+
+}// end pushCommandToQueue()
+
+ // push a string command into the taskQueue
+void C2SIMinterface::pushCommandToTaskQueue(std::string command) {
+
+	// if the command does not end with \n, insert it
+	if (command.back() != '\n')command.append("\n");
+
+	// push command onto queue
+	cout << "push to task queue:" << command << "\n";//debugx
+	taskQueue.push(command);
+
+}// end pushTaskCommandToTaskQueue()
+
+// transfer commands from taskQueue to commandQueue
+// stop at the next "run"
+void C2SIMinterface::moveTaskQueueCommandsToCommandQueue() {
+
+	string commandToMove = "";
 	
-	// insert 10ms between commands
-	DtSleep(.01);
-}
+	// loop until last command moved matches "run"
+	while (commandToMove.compare("run\n") != 0) {
+		if (taskQueue.empty())return;
+		commandToMove = taskQueue.front();
+		taskQueue.pop();
+		std::cout << "MOVE COMMAND:" << commandToMove << "\n";//debugx
+		C2SIMinterface::pushCommandToQueue(commandToMove);
+	}
+	//DtSleep(60.);//debugx
 
+}// end moveTaskQueueCommandsToCommandQueue()
 
 // read an XML file and return it as wstring
 string C2SIMinterface::readAnXmlFile(string filename) {
@@ -252,7 +275,8 @@ string C2SIMinterface::readAnXmlFile(string filename) {
 	}
 	xmlFile.close();
 	return xmlBuffer;
-}
+
+}// end readAnXmlFile()
 
 
 // write an XML file given name and wstring
@@ -269,7 +293,8 @@ void C2SIMinterface::writeAnXmlFile(char* filename, string content) {
 	// write the file from outputFrame message content
 	xmlFile << content;
 	xmlFile.close();
-}
+
+}// end writeAnXmlFile()
 
 
 // thread to listen for incoming STOMP message; parse the message,
@@ -283,7 +308,7 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 	if (SUCCEEDED(hr)) {
 
 		// wait for VR-Forces to get ready for commands
-		DtSleep(15.0);
+		DtSleep(10.);
 		std::cout << "READY FOR C2SIM ORDERS\n";
       
 		char testXml[] = "C:\\temp\\holdXml.xml";
@@ -321,12 +346,15 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 			char* latitude1 = new char[100];
 			char* latitude2 = new char[100];
 			char* latitude3 = new char[100];
+			char* latitude4 = new char[100];
 			char* longitude1 = new char[100];
 			char* longitude2 = new char[100];
 			char* longitude3 = new char[100];
+			char* longitude4 = new char[100];
 			char* elevationAgl1 = new char[100];
 			char* elevationAgl2 = new char[100];
 			char* elevationAgl3 = new char[100];
+			char* elevationAgl4 = new char[100];
 			char* unitID = new char[100];
 
 			// if the rootTag was found this an order - copy out data from parser 
@@ -343,23 +371,52 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 				latitude3,
 				longitude3,
 				elevationAgl3,
+				latitude4,
+				longitude4,
+				elevationAgl4,
 				unitID))
 			{
 				cout << "Parsed file:" << testXml << "\n";
-				cout << "Parse results TaskersIntent:" << taskersIntent <<
-					" DateTime:" << dateTime << " Latitude1:" << latitude1 <<
-					" Longitude1:" << longitude1 << " ElevationAGL1:" << elevationAgl1 <<
-					" Latitude2:" << latitude2 <<
-					" Longitude2:" << longitude2 << " ElevationAGL2:" << elevationAgl2 <<
-					" Latitude3:" << latitude3 <<
-					" Longitude3:" << longitude3 << " ElevationAGL3:" << elevationAgl3 <<
-					" UnitID:" << unitID << "\n";
 
 				// convert lan/lon/elev to MAK's preferred geocentric coords for three points
-				string x1, y1, z1, x2, y2, z2, x3, y3, z3;
+				string x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4;
 				c2simInterface->geodeticToGeocentric(latitude1, longitude1, elevationAgl1, x1, y1, z1);
+				// hack for negative alt from conversion debugx
+				std::string clat, clon, calt;
+				c2simInterface->geocentricToGeodetic(x1, y1, z1, clat, clon, calt);
+				if (stringToDouble(calt) < 0.0e0) {
+					std::cout << "bad Alt: " << calt;
+					c2simInterface->geodeticToGeocentric(latitude1, longitude1, "5.0", x1, y1, z1);
+					c2simInterface->geocentricToGeodetic(x1, y1, z1, clat, clon, calt);
+					std::cout << " revised value:" << calt << "\n";
+				}// end hack debugx
 				c2simInterface->geodeticToGeocentric(latitude2, longitude2, elevationAgl2, x2, y2, z2);
+				// hack debugx
+				c2simInterface->geocentricToGeodetic(x2, y2, z2, clat, clon, calt);
+				if (stringToDouble(calt) < 0.0e0) {
+					std::cout << "bad Alt: " << calt;
+					c2simInterface->geodeticToGeocentric(latitude2, longitude2, "5.0", x2, y2, z2);
+					c2simInterface->geocentricToGeodetic(x2, y2, z2, clat, clon, calt);
+					std::cout << " revised value:" << calt << "\n";
+				}// end hack debugx
 				c2simInterface->geodeticToGeocentric(latitude3, longitude3, elevationAgl3, x3, y3, z3);
+				// hack debugx
+				c2simInterface->geocentricToGeodetic(x3, y3, z3, clat, clon, calt);
+				if (stringToDouble(calt) < 0.0e0) {
+					std::cout << "bad Alt: " << calt;
+					c2simInterface->geodeticToGeocentric(latitude3, longitude3, "5.0", x3, y3, z3);
+					c2simInterface->geocentricToGeodetic(x3, y3, z3, clat, clon, calt);
+					std::cout << " revised value:" << calt << "\n";
+				}// end hack debugx
+				c2simInterface->geodeticToGeocentric(latitude4, longitude4, elevationAgl4, x4, y4, z4);
+				// hack debugx
+				c2simInterface->geocentricToGeodetic(x4, y4, z4, clat, clon, calt);
+				if (stringToDouble(calt) < 0.0e0) {
+					std::cout << "bad Alt: " << calt;
+					c2simInterface->geodeticToGeocentric(latitude4, longitude4, "5.0", x4, y4, z4);
+					c2simInterface->geocentricToGeodetic(x4, y4, z4, clat, clon, calt);
+					std::cout << " revised value:" << calt << "\n";
+				}// end hack debugx
 				string taskersIntentString = taskersIntent;
 				string dateTimeString = dateTime;
 				string unitIDString = unitID;
@@ -368,37 +425,40 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 				if (taskersIntentString == "QUIT")break;
 
 				// start a terrain and make a tank to run on it
-				pushCommandToQueue("new \"Ground-db.mtf\"");
+				//pushCommandToQueue("new \"Ground-db.mtf\"");
+				pushCommandToTaskQueue("new \"Ala Moana.mtf\"");
+
 				string createTankCommand = "create tank " + x1 + "," + y1 + "," + z1;
-				pushCommandToQueue(createTankCommand);
+				pushCommandToTaskQueue(createTankCommand);
 				
-				// need generator to create unique point names for use below
-				// create 3 waypoints for triangle path
-				string createWaypointCommand, moveTankCommand, runCommand;
+				// TODO: need generator to create unique point names for use below
+				// create 3 waypoints for path
+				string createWaypointCommand, moveTankCommand;
+				string runCommand = "run";
 				createWaypointCommand = "create waypoint \"Pt 1\" " + x2 + "," + y2 + "," +z2;
-				pushCommandToQueue(createWaypointCommand);
+				pushCommandToTaskQueue(createWaypointCommand);
 				createWaypointCommand = "create waypoint \"Pt 2\" " + x3 + "," + y3 + "," + z3;
-				pushCommandToQueue(createWaypointCommand);
-				createWaypointCommand = "create waypoint \"Pt 3\" " + x1 + "," + y1 + "," + z1;
-				pushCommandToQueue(createWaypointCommand);
+				pushCommandToTaskQueue(createWaypointCommand);
+				createWaypointCommand = "create waypoint \"Pt 3\" " + x4 + "," + y4 + "," + z4;
+				pushCommandToTaskQueue(createWaypointCommand);
 
 				// run the tank to waypoint 1
 				moveTankCommand = "task moveToPoint \"M1A2 1\" \"Pt 1\"";
-				pushCommandToQueue(moveTankCommand);
-				runCommand = "run";
-				pushCommandToQueue(runCommand);
+				pushCommandToTaskQueue(moveTankCommand);
+				pushCommandToTaskQueue(runCommand);
 
-				// wait 100 secd then run it to waypoint 2
-				DtSleep(100.0);
+				// now run it to waypoint 2
 				moveTankCommand = "task moveToPoint \"M1A2 1\" \"Pt 2\"";
-				pushCommandToQueue(moveTankCommand);
+				pushCommandToTaskQueue(moveTankCommand);
+				pushCommandToTaskQueue(runCommand);
 
-				// wait another 100 then run it to waypoint 3
-				DtSleep(100.0);
-				pushCommandToQueue(runCommand);
+				// then run it to waypoint 3
 				moveTankCommand = "task moveToPoint \"M1A2 1\" \"Pt 3\"";
-				pushCommandToQueue(moveTankCommand);
-				pushCommandToQueue(runCommand);
+				pushCommandToTaskQueue(moveTankCommand);
+				pushCommandToTaskQueue(runCommand);
+
+				// move the first set of commands from taskQueue to commandQueue
+				C2SIMinterface::moveTaskQueueCommandsToCommandQueue();
 
 				// next: make a method to extract other parameters from order and use them to
 				// create VR-Forces commands for a range of IBML09 'what' code Orders, bypassing
@@ -411,8 +471,7 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 		// tell VRForces to shutdown
 		pushCommandToQueue("quit");
 		cout << "Finished SAX\n";
-		DtSleep(10.0);
     
-	}// end method readStomp()
+	}// end readStomp()
 
 }// end class C2SIMInterface

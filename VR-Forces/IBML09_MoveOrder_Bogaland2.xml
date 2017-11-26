@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<bml:OrderPushIBML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"    
+    xsi:schemaLocation="http://netlab.gmu.edu/IBML"
+    xmlns:bml="http://netlab.gmu.edu/IBML">
+<bml:OrderPush>
+<bml:TaskersIntent>RELOCATE</bml:TaskersIntent>   
+<bml:Task><bml:GroundTask>
+<bml:TaskeeWho><bml:UnitID>1/22A_INF</bml:UnitID></bml:TaskeeWho>
+<bml:What><bml:WhatCode>MOVE</bml:WhatCode></bml:What>
+<bml:Where><bml:WhereID>ROUTE</bml:WhereID><bml:AtWhere><bml:JBMLAtWhere>
+<bml:WhereLabel>ROUTE</bml:WhereLabel>
+<bml:WhereCategory>ROUTE</bml:WhereCategory>
+<bml:WhereClass>LN</bml:WhereClass><bml:WhereValue>
+<bml:WhereLocation Sequence="1"><bml:GDC>
+<bml:Latitude>58.2</bml:Latitude>
+<bml:Longitude>14.9</bml:Longitude>
+<bml:ElevationAGL>0.0</bml:ElevationAGL>
+<bml:WhereLocation Sequence="2"><bml:GDC>
+<bml:Latitude>58.21</bml:Latitude>
+<bml:Longitude>14.91</bml:Longitude>
+<bml:ElevationAGL>0.0</bml:ElevationAGL>
+</bml:GDC></bml:WhereLocation>
+<bml:WhereLocation Sequence="3"><bml:GDC>
+<bml:Latitude>58.22</bml:Latitude>
+<bml:Longitude>14.92</bml:Longitude>
+<bml:ElevationAGL>0.0</bml:ElevationAGL>
+</bml:GDC></bml:WhereLocation>
+<bml:WhereLocation Sequence="4"><bml:GDC>
+<bml:Latitude>58.23</bml:Latitude>
+<bml:Longitude>14.93</bml:Longitude>
+<bml:ElevationAGL>0.0</bml:ElevationAGL>
+</bml:GDC></bml:WhereLocation>
+</bml:WhereValue>
+<bml:WhereQualifier>ALONG</bml:WhereQualifier>
+</bml:JBMLAtWhere></bml:AtWhere></bml:Where>
+<bml:StartWhen><bml:WhenTime>
+<bml:StartTimeQualifier>AT</bml:StartTimeQualifier>
+<bml:DateTime>20170308131909.000</bml:DateTime>
+</bml:WhenTime></bml:StartWhen>
+<bml:TaskID>MOVE EXAMPLE UNIT</bml:TaskID>
+</bml:GroundTask></bml:Task>
+<bml:OrderIssuedWhen>20170320620139.000</bml:OrderIssuedWhen>
+<bml:OrderID>EXAMPLE ORDER</bml:OrderID>
+<bml:TaskerWho>
+<bml:UnitID>1/22_INF</bml:UnitID></bml:TaskerWho>
+</bml:OrderPush>
+</bml:OrderPushIBML>
