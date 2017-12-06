@@ -226,7 +226,7 @@ void C2SIMinterface::pushCommandToQueue(std::string command) {
 	cout << "push to command queue:" << command << "\n";//debugx
 	commandQueue.push(command);
 
-}// end pushCommandToQueue()
+}// end C2SIMinterfaace::pushCommandToQueue()
 
  // push a string command into the taskQueue
 void C2SIMinterface::pushCommandToTaskQueue(std::string command) {
@@ -235,10 +235,10 @@ void C2SIMinterface::pushCommandToTaskQueue(std::string command) {
 	if (command.back() != '\n')command.append("\n");
 
 	// push command onto queue
-	cout << "push to task queue:" << command << "\n";//debugx
+	cout << "push to task queue:" << command;//debugx
 	taskQueue.push(command);
 
-}// end pushTaskCommandToTaskQueue()
+}// end C2SIMinterface::pushTaskCommandToTaskQueue()
 
 // transfer commands from taskQueue to commandQueue
 // stop at the next "run"
@@ -251,7 +251,7 @@ void C2SIMinterface::moveTaskQueueCommandsToCommandQueue() {
 		if (taskQueue.empty())return;
 		commandToMove = taskQueue.front();
 		taskQueue.pop();
-		std::cout << "MOVE COMMAND:" << commandToMove << "\n";//debugx
+		std::cout << "MOVE COMMAND:" << commandToMove;//debugx
 		C2SIMinterface::pushCommandToQueue(commandToMove);
 	}
 	//DtSleep(60.);//debugx
@@ -380,54 +380,73 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 
 				// convert lan/lon/elev to MAK's preferred geocentric coords for three points
 				string x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4;
+
+				// point 1 coordinatess
 				c2simInterface->geodeticToGeocentric(latitude1, longitude1, elevationAgl1, x1, y1, z1);
 				// hack for negative alt from conversion debugx
 				std::string clat, clon, calt;
 				c2simInterface->geocentricToGeodetic(x1, y1, z1, clat, clon, calt);
 				if (stringToDouble(calt) < 0.0e0) {
-					std::cout << "bad Alt: " << calt;
+					std::cout << "bad Alt1: " << calt;
 					c2simInterface->geodeticToGeocentric(latitude1, longitude1, "5.0", x1, y1, z1);
 					c2simInterface->geocentricToGeodetic(x1, y1, z1, clat, clon, calt);
 					std::cout << " revised value:" << calt << "\n";
 				}// end hack debugx
+				std::cout << "geocentric1:" << x1 << " " << y1 << " " << z1 << "\n";
+
+				// point 2 coordinates
 				c2simInterface->geodeticToGeocentric(latitude2, longitude2, elevationAgl2, x2, y2, z2);
 				// hack debugx
 				c2simInterface->geocentricToGeodetic(x2, y2, z2, clat, clon, calt);
 				if (stringToDouble(calt) < 0.0e0) {
-					std::cout << "bad Alt: " << calt;
+					std::cout << "bad Alt2: " << calt;
 					c2simInterface->geodeticToGeocentric(latitude2, longitude2, "5.0", x2, y2, z2);
 					c2simInterface->geocentricToGeodetic(x2, y2, z2, clat, clon, calt);
 					std::cout << " revised value:" << calt << "\n";
 				}// end hack debugx
+				std::cout << "geocentric2:" << x2 << " " << y2 << " " << z2 << "\n";
+
+				// point 3 coordinates
 				c2simInterface->geodeticToGeocentric(latitude3, longitude3, elevationAgl3, x3, y3, z3);
 				// hack debugx
 				c2simInterface->geocentricToGeodetic(x3, y3, z3, clat, clon, calt);
 				if (stringToDouble(calt) < 0.0e0) {
-					std::cout << "bad Alt: " << calt;
+					std::cout << "bad Alt3: " << calt;
 					c2simInterface->geodeticToGeocentric(latitude3, longitude3, "5.0", x3, y3, z3);
 					c2simInterface->geocentricToGeodetic(x3, y3, z3, clat, clon, calt);
 					std::cout << " revised value:" << calt << "\n";
 				}// end hack debugx
+				std::cout << "geocentric3:" << x3 << " " << y3 << " " << z3 << "\n";
+
+				// point 4 coordinates
 				c2simInterface->geodeticToGeocentric(latitude4, longitude4, elevationAgl4, x4, y4, z4);
 				// hack debugx
 				c2simInterface->geocentricToGeodetic(x4, y4, z4, clat, clon, calt);
 				if (stringToDouble(calt) < 0.0e0) {
-					std::cout << "bad Alt: " << calt;
+					std::cout << "bad Alt4s: " << calt;
 					c2simInterface->geodeticToGeocentric(latitude4, longitude4, "5.0", x4, y4, z4);
 					c2simInterface->geocentricToGeodetic(x4, y4, z4, clat, clon, calt);
 					std::cout << " revised value:" << calt << "\n";
 				}// end hack debugx
+				std::cout << "geocentric4:" << x4 << " " << y4 << " " << z4 << "\n";
+				
+				// misc parameters
 				string taskersIntentString = taskersIntent;
+				std::cout << "taskersIntent:" << taskersIntentString << "\n";
 				string dateTimeString = dateTime;
+				std::cout << "dateTime:" << dateTimeString << "\n";
 				string unitIDString = unitID;
+				std::cout << "unitID:" << unitIDString << "\n";
 
 				// check for quit command
-				if (taskersIntentString == "QUIT")break;
-
-				// start a terrain and make a tank to run on it
-				//pushCommandToQueue("new \"Ground-db.mtf\"");
-				pushCommandToTaskQueue("new \"Ala Moana.mtf\"");
-
+				// if (taskersIntentString == "QUIT")break;
+				std::cout << "starting to issue VRF commands\n";
+			
+				// previously we generated a "new" command at this point
+				// now we're expecting the user to do that on VR-Forces GUI
+				// during startup, giving more flexibility to Sandbox users
+				
+				// make a tank to run on it, via task queues
 				string createTankCommand = "create tank " + x1 + "," + y1 + "," + z1;
 				pushCommandToTaskQueue(createTankCommand);
 				

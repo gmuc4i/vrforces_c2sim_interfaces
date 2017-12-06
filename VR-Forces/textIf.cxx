@@ -1223,19 +1223,6 @@ void DtTextInterface::readCommand()
          // won't terminate from within processCmd 
          RESTORE();
          processCmd(buff);
-
-		 // for new terrain database, wait until VR-Forces has processed the command
-		 // (timeout of 10 seconds)
-		 if (strncmp(buff, "new", 3) == 0) {
-			 int countdown = 10000; //milliseconds
-			 while (countdown-- > 0) {
-				 if (cs2sim_controller->allBackendsReady())break;
-				 DtSleep(.001);
-			 }
-			 if (countdown < 0)
-				 std::cout << "------------warning:NEW TERRAIN TIMEOUT!!!\n";
-		 }
-
          if(!kbInterest)
          {
             return;
