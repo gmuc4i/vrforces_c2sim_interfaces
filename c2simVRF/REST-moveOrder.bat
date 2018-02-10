@@ -1,0 +1,1 @@
+java -jar BML_WSClient2_ALL.jar 10.2.10.30 IBML09_MoveOrder.xml jmp ibml09
