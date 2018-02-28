@@ -9,6 +9,7 @@
 #include <vlutil/vlUtil.h>
 #include "vrfcontrol/vrfRemoteController.h"
 
+
 //This class provides a text interface for controlling VR-Forces over the network.
 //This interface currently supports the following actions:
 //
@@ -84,7 +85,9 @@ public:
 public:
 
 	//constructor
-	DtTextInterface(DtVrfRemoteController* controller, std::string serverAddress);
+	DtTextInterface(
+		DtVrfRemoteController* controller,
+		std::string serverAddress);
 
 	//destructor
 	virtual ~DtTextInterface();
@@ -115,6 +118,8 @@ public:
 
    void DtTextInterface::spotReportCallback(//const 
 		DtVrfObjectMessage* msg, void * usr);
+   void DtTextInterface::setOrderIsIbml(bool orderIsIbml);
+   void DtTextInterface::setOrderIsC2sim(bool orderIsC2sim);
 
    //-------------------------------------------------------
    //Text callback functions

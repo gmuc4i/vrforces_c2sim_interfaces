@@ -17,9 +17,9 @@
 /*
 To run demo on Sandbox:
 1. start VR Forces; at Config panel clock Launch;
-on Startup panel run Bogaland8; wait until icon shows on map
-2. run remoteControlTriangle/remoteControlDIS; wait for READY FOR C2SIM ORDERS
-3. send an order by C2SIM/RESTclient/RES-moveOrder.bat
+on Startup panel run Bogaland9; wait until icon shows on map
+2. c2simVRF/remoteControlDIS; wait for READY FOR C2SIM ORDERS
+3. send an order by C2SIM/RESTclient/REST-moveOrder.bat
 4. icon should move on route from order and reports should be emitted
 5. to see reports run C2SIM/STOMPclient/STOMP.bat or run BMLC2GUI
 */
@@ -181,6 +181,7 @@ void C2SIMinterface::geocentricToGeodetic(std::string x, std::string y, std::str
 	alt = doubleToString(geod.alt());
 }
 
+
  // read an XML file and return it as wstring
 string C2SIMinterface::readAnXmlFile(string filename) {
 
@@ -275,6 +276,10 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 
 			// parse out order elements
 
+			// get and set type of order - used to determine type of report
+			textIf->setOrderIsIbml(c2simOrderHandler->getOrderTypeIbml());
+			textIf->setOrderIsC2sim(c2simOrderHandler->getOrderTypeC2sim());
+
 			// get taskersIntent
 			taskersIntent = c2simOrderHandler->C2SIMOrderHandler::getTaskersIntent();
 
@@ -284,11 +289,15 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 			// get arrays of geocentric point coordiantes
 			int numberOfPoints =
 				c2simOrderHandler->getRoutePoints(x, y, z);
+			if (numberOfPoints == 0) {
+				std::cout << "no location given - can't execute order\n";
+				continue;
+			}
 
 			// get unitID
 			unitId = c2simOrderHandler->C2SIMOrderHandler::getUnitId();
 
-			cout << "C2SIMInterface got order unitID:" << unitId << " dateTime:" << dateTime << " intent:" << taskersIntent << "\n";
+			cout << "C2SIMinterface got order unitID:" << unitId << " dateTime:" << dateTime << " intent:" << taskersIntent << "\n";
 
 			// misc parameters
 			string taskersIntentString = taskersIntent;
@@ -303,7 +312,7 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 			// now we're expecting the user to do that on VR-Forces GUI
 			// during startup, giving more flexibility to Sandbox users
 
-				// make a tank object to run on it, via task queues
+				// make a tank object to run on it
 				DtVector vec(x[0], y[0], z[0]);
 				textIf->controller()->createEntity(
 					DtTextInterface::vrfObjectCreatedCb, (void*)"tank",
@@ -356,4 +365,4 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 
 	}// end readStomp()
 
-}// end class C2SIMInterface
+}// end class C2SIMinterface

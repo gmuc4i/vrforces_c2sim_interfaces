@@ -47,8 +47,7 @@
 
 #include <vl/startResumeInteraction.h>
 #include <vl/stopFreezeInteraction.h>
-
-#include "C2SIMInterface.h"
+#include "C2SIMinterface.h"
 #include "RestClient.h"
 
 #include <time.h>
@@ -79,6 +78,9 @@
 #define UNBLOCK()
 #define RESTORE()
 #endif
+
+bool gotIbmlOrder = false;
+bool gotC2simOrder = false;
 
 const char* terrainDir = "..\\userData\\terrains\\";
 const char* scenariosDir = "..\\userData\\scenarios\\";
@@ -137,6 +139,7 @@ int nCmds = DtNUMBER(allCmds);
 unsigned int DtTextInterface::theNextAggregateId = 1;
 unsigned int DtTextInterface::theNextSubordinateId = 1;
 
+// pieces of ibml general status report
 std::string ibml09GSRpart1(
 	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 	"<bml:BMLReport xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n"
@@ -174,6 +177,31 @@ std::string ibml09GSRpart5(
 	"</bml:Credibility>\n"
 	"</bml:GeneralStatusReport></bml:StatusReport></bml:Report></bml:BMLReport>");
 
+// pieces of C2SIM position report
+std::string c2simPositionPart1(
+	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+	"<C2SIM_Position_Report xmlns=\"http://www.sisostds.org/schemas/c2sim/1.0\" \n"
+	"xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" \n"
+	"xsi:schemaLocation = \"http://www.sisostds.org/schemas/c2sim/1.0 C2SIM_Experimental.xsd\"> \n"
+	"<ActorEntity><ActorEntityID>");
+std::string c2simPositionPart2(
+	"</ActorEntityID></ActorEntity><ReportingEntity><ActorEntityID>");
+std::string c2simPositionPart3(
+	"</ActorEntityID></ReportingEntity><ReportingTime>");
+std::string c2simPositionPart4(
+	"</ReportingTime><Location><Latitude>");
+std::string c2simPositionPart5(
+	"</Latitude><Longitude>");
+std::string c2simPositionPart6(
+	"</Longitude></Location>"
+	"<HealthStatus><OperationalStatusCode>");
+std::string c2simPositionPart7(
+	"</OperationalStatusCode><StrengthPercentage>");
+std::string c2simPositionPart8(
+	"</StrengthPercentage><HostilityCode>");
+std::string c2simPositionPart9(
+	"</HostilityCode></HealthStatus></C2SIM_Position_Report>");
+
 // send REST message
 void sendRest(std::string report) {
 	
@@ -188,6 +216,16 @@ void sendRest(std::string report) {
 //
 // These two functions handle 3 report types; they could be factored into
 // 3 functions, or combined into 1
+
+// let C2SIMinterface select report type based on order type
+void DtTextInterface::setOrderIsIbml(bool isIbmlOrder)
+{
+	gotIbmlOrder = isIbmlOrder;
+}
+void DtTextInterface::setOrderIsC2sim(bool isC2simOrder)
+{
+	gotC2simOrder = isC2simOrder;
+}
 
 void reportCallback(const DtVrfObjectMessage* msg, void* usr)
 {
@@ -243,9 +281,31 @@ void reportCallback(const DtVrfObjectMessage* msg, void* usr)
 					std::string nameString = std::string(name);
 					std::string latString = std::string(latChars);
 					std::string lonString = std::string(lonChars);
-					sendRest(
-						ibml09GSRpart1 + nameString + ibml09GSRpart2 + nameString +
-						ibml09GSRpart3 + latString + ibml09GSRpart4 + lonString + ibml09GSRpart5);
+
+					// choose report format matching order received
+					if (gotIbmlOrder) 
+						sendRest(
+							ibml09GSRpart1 + nameString + ibml09GSRpart2 + nameString +
+							ibml09GSRpart3 + latString + ibml09GSRpart4 + lonString + ibml09GSRpart5);
+					if (gotC2simOrder) {
+						sendRest(
+							c2simPositionPart1 + nameString + c2simPositionPart2 + nameString +
+							c2simPositionPart3 + "UNK" + // reporting time
+							c2simPositionPart4 + latString +
+							c2simPositionPart5 + lonString +
+							c2simPositionPart6 + "UNK" + // operational status
+							c2simPositionPart7 + "UNK" + // stremgth percentage
+							c2simPositionPart8 + "UNK" + // hostility code
+							c2simPositionPart9);
+						std::string sendit = c2simPositionPart1 + nameString + c2simPositionPart2 + nameString +//debuugx
+							c2simPositionPart3 + "UNK" + // reporting time
+							c2simPositionPart4 + latString +
+							c2simPositionPart5 + lonString +
+							c2simPositionPart6 + "UNK" + // operational status
+							c2simPositionPart7 + "UNK" + // stremgth percentage
+							c2simPositionPart8 + "UNK" + // hostility code
+							c2simPositionPart9;
+					}
 				}
 			}
 		}
@@ -282,7 +342,7 @@ void DtTextInterface::spotReportCallback(//const
 	delete spotReports;
 }
 
-// provide C2SIMInterface with number of task completed
+// provide C2SIMinterface with number of task completed
 int DtTextInterface::getTaskNumberCompleted() {
 	return taskNumberCompleted;
 }
@@ -1137,7 +1197,7 @@ Cmd *lookupCmd(char *cmdname)
 }
 
 DtTextInterface::DtTextInterface(
-  DtVrfRemoteController* controller, 
+  DtVrfRemoteController* controller,
 	std::string serverAddressRef) :
   kbInterest(0), myTimeToQuit(0), 
     myController(controller)
@@ -1189,6 +1249,7 @@ DtTextInterface::~DtTextInterface()
    myController->removeBackendSavedCallback(backendSavedCb, NULL);
    myController->removeScenarioSavedCallback(ScenarioSavedCb, NULL);
 }
+
 
 void DtTextInterface::setTimeToQuit(bool yesNo)
 {

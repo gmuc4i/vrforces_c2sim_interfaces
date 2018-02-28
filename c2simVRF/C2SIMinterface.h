@@ -66,7 +66,4 @@ public:
 	static void readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInterface);
 	static std::string readAnXmlFile(std::string contents);
 	static void writeAnXmlFile(char* filename, std::string content);
-	static void pushCommandToQueue(std::string command);
-	static void pushCommandToTaskQueue(std::string command);
-	static void moveTaskQueueCommandsToCommandQueue(void);
 };

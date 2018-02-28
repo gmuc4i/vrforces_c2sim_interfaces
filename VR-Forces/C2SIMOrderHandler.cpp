@@ -229,16 +229,19 @@ void C2SIMOrderHandler::characters(
 		std::cout << "WARNING data length " << dataLength << " over config limit of " <<
 		MAXCHARLENGTH << " data truncated begins:" << dataText << "\n";
 
-	// first tag offered should be root tag
+	// first tag offered should be root tag - determine whether IBML or C2SIM
 	if (missingRootTag)return;
 	if (!foundRootTag) {
 		if (strncmp(latestTag, ibmlOrderRootTag, MAXCHARLENGTH) == 0) {
 			foundRootTag = true;
 			orderFormatIsIbml = true;
+			std::cout << "received IBML order - will report in IBML format\n";
 			return;
 		}
 		else if (strncmp(latestTag, c2simOrderRootTag, MAXCHARLENGTH) == 0) {
 			foundRootTag = true;
+			orderFormatIsC2sim = true;
+			std::cout << "received C2SIM order - will report in C2SIM format\n";
 			return;
 		}
 		else missingRootTag = true;

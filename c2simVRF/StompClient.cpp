@@ -152,9 +152,9 @@ void StompClient::receiveFrame(StompFrame& frame) {
 	char frameTerminator;
 	inputSource.get(frameTerminator);
 	if (frameTerminator != 0) {
-//debugx#ifdef DEBUG_PARSER
+#ifdef DEBUG_PARSER
 		std::cout << "Received frame terminator '" << frameTerminator << "'" <<std::endl;
-//debugendif
+#endif
 		throw StompException("Invalid frame terminator");
 	}
 	/*

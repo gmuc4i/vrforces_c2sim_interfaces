@@ -36,13 +36,16 @@ class C2SIMOrderHandler : public HandlerBase
 #define MAXPOINTS 100 // points in route
 
 	// description of XML order
-	char* orderRootTag = "OrderPushIBML";
-	char* taskersIntentTag = "TaskersIntent";
-	char* dateTimeTag = "DateTime";
-	char* unitIdTag = "UnitID";
+	char* ibmlOrderRootTag = "OrderPushIBML";
+	char* c2simOrderRootTag = "C2SIM_Order";
+	char* ibmlTaskersIntentTag = "TaskersIntent";
+	char* ibmlDateTimeTag = "DateTime";
+	char* c2simDateTimeTag = "StartTime";
+	char* ibmlUnitIdTag = "UnitID";
+	char* c2simUnitIdTag = "ActorENtityId";
 	char* latitudeTag = "Latitude";
 	char* longitudeTag = "Longitude";
-	char* elevationTag = "ElevationAGL";
+	char* ibmlElevationTag = "ElevationAGL";
 
 public:
 	C2SIMOrderHandler();
@@ -53,6 +56,8 @@ public:
 	char* C2SIMOrderHandler::getUnitId();
 	int C2SIMOrderHandler::getRoutePoints(double x[], double y[], double z[]);
 	bool C2SIMOrderHandler::orderRootTagFound();
+	bool C2SIMOrderHandler::getOrderTypeIbml();
+	bool C2SIMOrderHandler::getOrderTypeC2sim();
 	void startElement(const XMLCh* const, AttributeList&);
 	void fatalError(const SAXParseException&);
 	void startDocument();

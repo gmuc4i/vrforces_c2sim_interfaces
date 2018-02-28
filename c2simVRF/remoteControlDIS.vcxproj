@@ -36,7 +36,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -87,6 +87,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc\bin\xerces-c_3_1D.dll;C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc\bin;C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc;C:\Users\c2sim\Documents\VR-Forces\Source Code\vrlj\com\mak\vrlj\object;C:\Users\c2sim\Documents\VR-Forces\Source Code;C:\Users\c2sim\workspace\VR-Link Program\lib;C:\Users\c2sim\workspace\VR-Link Program\lib\BML_Clients;$(IncludePath)</IncludePath>
     <LibraryPath>C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc\bin;C:\MAK\vrforces4.4.2\examples\c2simVRF\cpprest\x64;C:\Users\c2sim\workspace\VR-Link Program\lib\BML_Clients;C:\Users\c2sim\workspace\VR-Link Program\lib;C:\Users\c2sim\Documents\VR-Forces\Source Code;C:\Users\c2sim\Documents\VR-Forces\Source Code\vrlj\com\mak\vrlj\object;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc\bin;$(ExecutablePath)</ExecutablePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LibraryPath>C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc\bin;$(LibraryPath)</LibraryPath>
     <ExecutablePath>C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc\bin;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -218,7 +222,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <Link>
       <AdditionalOptions> /machine:x64 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;vrfcontrolDIS.lib;vlutil.lib;matrix.lib;mtl.lib;vlDIS.lib;vl.lib;vrfExtProtocol.lib;vrfmsgs.lib;vrfplan.lib;vrftasks.lib;vrfutil.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>../../lib64;../../lib64/$(Configuration);$(MAK_VRLDIR)/lib64;$(MAK_VRLDIR)/lib64/$(Configuration);/lib;/lib/$(Configuration);/lib64;/lib64/$(Configuration);../../lib;../../lib/$(Configuration);/lib64;/lib64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc\lib;C:\MAK\vrforces4.4.2\examples\c2simVRF\xercesc\bin;../../lib64;../../lib64/$(Configuration);$(MAK_VRLDIR)/lib64;$(MAK_VRLDIR)/lib64/$(Configuration);/lib;/lib/$(Configuration);/lib64;/lib64/$(Configuration);../../lib;../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>../../examples/c2simVRF/build64/Release/remoteControlDIS.lib</ImportLibrary>
