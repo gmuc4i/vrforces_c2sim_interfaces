@@ -66,4 +66,5 @@ public:
 	static void readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInterface);
 	static std::string readAnXmlFile(std::string contents);
 	static void writeAnXmlFile(char* filename, std::string content);
+	static boolean isNewObject(std::string objectName);
 };
