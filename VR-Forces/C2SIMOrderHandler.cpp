@@ -251,6 +251,7 @@ void C2SIMOrderHandler::characters(
 	if (!foundRootTag || foundFinalTag || *latestTag == '\0')return;
 
 	// look for order element tags and copy their data one tag at a time
+	//std::cout << "TAG:" << latestTag << "|  DATA:" << dataText << "|\n";
 
 	// look for tastkersIntent
 	if (!foundTaskersIntent) {
@@ -267,13 +268,13 @@ void C2SIMOrderHandler::characters(
 		if (orderFormatIsIbml && strncmp(latestTag, ibmlUnitIdTag, MAXCHARLENGTH) == 0) {
 			foundUnitID = true;
 			strncpy(unitId, dataText, MAXCHARLENGTH);
-			//std::cout << "PARSE UnitID:" << unitId << "\n";
+			//std::cout << "PARSE IBML09 UnitID:" << unitId << "\n";
 			return;
 		}
 		else if (orderFormatIsC2sim && strncmp(latestTag, c2simUnitIdTag, MAXCHARLENGTH) == 0) {
 			foundUnitID = true;
 			strncpy(unitId, dataText, MAXCHARLENGTH);
-			//std::cout << "PARSE UnitID:" << unitId << "\n";
+			std::cout << "PARSE C2SIM UnitID:" << unitId << "\n";
 			return;
 		}
 	}

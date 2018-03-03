@@ -42,31 +42,29 @@
 #include "StompClient.h"
 
 class C2SIMinterface
-		{
-			// globals
-			std::string stompPort = "61613"; // standard server STOMP port
-			mee::stomp::StompClient* client;
+{
+	// globals
+	std::string stompPort = "61613"; // standard server STOMP port
+	mee::stomp::StompClient* client;
 
-		public:
-			C2SIMinterface(
-				DtVrfRemoteController* controller, 
-				std::string serverAddress, 
-				char* orderXmlRootElement);
-			~C2SIMinterface();
-			// coordinate conversions
-			static void dGeodeticToGeocentric(
-				double lat, double lon, double alt, double &x, double &y, double &z);
-			static void geodeticToGeocentric(char* lat, char* lon, char* elMsl,
-				std::string &x, std::string &y, std::string &z);
-			static void dGeocentricToGeodetic(
-				double x, double y, double z, double &lat, double &lon, double &alt);
-			static void geocentricToGeodetic(std::string x, std::string y, std::string z,
-				std::string &lat, std::string &lon, std::string &elMsl);
-			static char* non_blocking_C2SIM_fgets(char* buffer, int bufferSize);
-			static void readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInterface);
-			static std::string readAnXmlFile(std::string contents);
-			static void writeAnXmlFile(char* filename, std::string content);
-			static void pushCommandToQueue(std::string command);
-			static void pushCommandToTaskQueue(std::string command);
-			static void moveTaskQueueCommandsToCommandQueue(void);
-		};
+public:
+	C2SIMinterface(
+		DtVrfRemoteController* controller,
+		std::string serverAddress);
+	~C2SIMinterface();
+
+	// coordinate conversions
+	static void dGeodeticToGeocentric(
+		double lat, double lon, double alt, double &x, double &y, double &z);
+	static void geodeticToGeocentric(char* lat, char* lon, char* elMsl,
+		std::string &x, std::string &y, std::string &z);
+	static void dGeocentricToGeodetic(
+		double x, double y, double z, double &lat, double &lon, double &alt);
+	static void geocentricToGeodetic(std::string x, std::string y, std::string z,
+		std::string &lat, std::string &lon, std::string &elMsl);
+	static char* non_blocking_C2SIM_fgets(char* buffer, int bufferSize);
+	static void readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInterface);
+	static std::string readAnXmlFile(std::string contents);
+	static void writeAnXmlFile(char* filename, std::string content);
+	static boolean isNewObject(std::string objectName);
+};

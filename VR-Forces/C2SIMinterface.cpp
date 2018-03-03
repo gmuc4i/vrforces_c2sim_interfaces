@@ -20,9 +20,11 @@ To run demo on Sandbox:
 on Startup panel run Bogaland9; wait until icon shows on map
 2. c2simVRF/remoteControlDIS; wait for READY FOR C2SIM ORDERS
 3. send an order by C2SIM/RESTclient/REST-moveOrder.bat
-4. icon should move on route from order and reports should be emitted
-5. to see reports run C2SIM/STOMPclient/STOMP.bat or run BMLC2GUI
-6. accepts IBML09 or C2SIMv0.6.8 schema and produces report 
+4. if order is for unit not previously introduced, new icon will be made
+   at first set of coordinates in order
+5. icon should move on route from order and reports should be emitted
+6. to see reports run C2SIM/STOMPclient/STOMP.bat or run BMLC2GUI
+7. accepts IBML09 or C2SIMv0.6.8 schema and produces report 
    from same schema
 */
 #include "C2SIMinterface.h"
@@ -73,6 +75,9 @@ ErrorHandler* errHandler;
 std::string stompServerAddress;
 static string vrfTerrain;
 const static double degreesToRadians = 57.2957795131L;
+int numberOfObjects = 0;
+#define MAX_OBJECTS 100
+std::string objectNames[MAX_OBJECTS];
 
 // constructor
 C2SIMinterface::C2SIMinterface(
@@ -184,6 +189,27 @@ void C2SIMinterface::geocentricToGeodetic(std::string x, std::string y, std::str
 }
 
 
+// check object name - is it one we have already passed to VR-Forces?
+boolean C2SIMinterface::isNewObject(string objectName)
+{
+	// range check
+	if (numberOfObjects >= MAX_OBJECTS) {
+		std::cout << "error - too many different objects (" << MAX_OBJECTS << ")\n";
+		return false;
+	}
+	
+	// scan objects already seen
+	for (int i = 0; i < numberOfObjects; ++i) {
+		if (objectName == objectNames[i])
+			return false;
+	}
+
+	// insert new object in array
+	objectNames[numberOfObjects++] = objectName;
+	return true;
+}
+
+
  // read an XML file and return it as wstring
 string C2SIMinterface::readAnXmlFile(string filename) {
 
@@ -230,12 +256,14 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 	HRESULT hr = CoInitialize(NULL);
 	mee::stomp::StompFrame inputFrame;
 	mee::stomp::StompClient stompClient(stompStream);
+	char testXml[] = "C:\\temp\\holdXml.xml";
 
 	if (SUCCEEDED(hr)) {
 
+		// wait a second for VR-Forces to start
+		// TODO: figur eout how to synchronize this
+		DtSleep(1.0);
 		std::cout << "READY FOR C2SIM ORDERS\n";
-
-		char testXml[] = "C:\\temp\\holdXml.xml";
 
 		// loop reading XML Orders, parsing them into VR-Forces commands
 		// and pushing to command queue
@@ -266,7 +294,7 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 
 			// check that we parsed something; if not go to next order
 			if (!c2simOrderHandler->C2SIMOrderHandler::orderRootTagFound())continue;
-			cout << "Completed parse of file:" << testXml << "\n";
+			cout << "Completed parse of order\n";
 
 			// extract parsed values
 			char* taskersIntent = new char[MAXCHARARRAY];
@@ -314,50 +342,53 @@ void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInt
 			// now we're expecting the user to do that on VR-Forces GUI
 			// during startup, giving more flexibility to Sandbox users
 
-				// make a tank object to run on it
+			// make a tank object to run on it
+			// TODO: objects other than tanks
+			if (isNewObject(unitId)) {
 				DtVector vec(x[0], y[0], z[0]);
 				textIf->controller()->createEntity(
 					DtTextInterface::vrfObjectCreatedCb, (void*)"tank",
 					DtEntityType(1, 1, 225, 1, 1, 3, 0), vec,
 					DtForceFriendly, 90.0, unitId);
+			}
 
-				// create waypoints for all remaining numberOfPoints
-				string pointNames[MAXPOINTS];
-				for (int pointNumber = 1; pointNumber < numberOfPoints; ++pointNumber) {
+			// create waypoints for all remaining numberOfPoints
+			string pointNames[MAXPOINTS];
+			for (int pointNumber = 1; pointNumber < numberOfPoints; ++pointNumber) {
 
-					// combine coordinates to a DtVector
-					DtVector vec(x[pointNumber], y[pointNumber], z[pointNumber]);
+				// combine coordinates to a DtVector
+				DtVector vec(x[pointNumber], y[pointNumber], z[pointNumber]);
 
-					// name a point name ending in i (up to 99)
-					std::ostringstream oss;
-					oss << "Pt " << pointNumber;
-					pointNames[pointNumber] = oss.str();
+				// name a point name ending in i (up to 99)
+				std::ostringstream oss;
+				oss << "Pt " << pointNumber;
+				pointNames[pointNumber] = oss.str();
 					
-					// create a point with these properties
-					textIf->controller()->
-						createWaypoint(
-							DtTextInterface::vrfObjectCreatedCb, 
-							(void*)"waypoint", 
-							vec,
-							pointNames[pointNumber]);
-				}
+				// create a point with these properties
+				textIf->controller()->
+					createWaypoint(
+						DtTextInterface::vrfObjectCreatedCb, 
+						(void*)"waypoint", 
+						vec,
+						pointNames[pointNumber]);
+			}
 
-				// wait a little bit 
-				DtSleep(1.);//debug (is there a race here?)
+			// wait a little bit 
+			DtSleep(1.);//TODO: (is there a race here?)
 				
-				// run the tank to each waypoint and wait until it gets there
-				for (int pointNumber = 1; pointNumber < numberOfPoints; ++pointNumber) {
-					textIf->controller()->moveToWaypoint(unitId, pointNames[pointNumber]);
-					textIf->controller()->run();
-					while(textIf->getTaskNumberCompleted() < pointNumber)
-					  DtSleep(.1);
-				}
+			// run the tank to each waypoint and wait until it gets there
+			for (int pointNumber = 1; pointNumber < numberOfPoints; ++pointNumber) {
+				textIf->controller()->moveToWaypoint(unitId, pointNames[pointNumber]);
+				textIf->controller()->run();
+				while(textIf->getTaskNumberCompleted() < pointNumber)
+					DtSleep(.1);
+			}
 				
-				// next: extract other parameters from order and use them to
-				// create VR-Forces commands for a range of IBML09 'what' code Orders, bypassing
-				// the DtTextInterface by calling for example (textIf.cpp line 895) 
-				// a->moveToPoint(str) in place of text command "moveToPoint".
-				// Also figure out how to fix the compile message that says version not recognized
+			// next: extract other parameters from order and use them to
+			// create VR-Forces commands for a range of IBML09 'what' code Orders, bypassing
+			// the DtTextInterface by calling for example (textIf.cpp line 895) 
+			// a->moveToPoint(str) in place of text command "moveToPoint".
+			// Also figure out how to fix the compile message that says version not recognized
 			
 		}// end while(true)
 

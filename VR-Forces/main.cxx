@@ -5,6 +5,7 @@
 /*******************************************************************************
 ** $RCSfile: main.cxx,v $ $Revision: 1.13 $ $State: Exp $
 *******************************************************************************/
+//** MODIFIED 8Feb2018 by GMU C4I & Cyber Lab 
 
 // alternate command line: --disVersion 7 --deviceAddress 127.0.0.1 --disPort 3000 -a 3001 -s 1 -x 1
 
@@ -21,10 +22,10 @@
 #include <vlutil/vlProcessControl.h>
 
 // IP address of C2SIM (BML) server
-std::string serverAddress = "10.2.10.30";
+std::string serverAddress = "10.0.0.69";// "10.2.10.30";
 
 // provides STOMP interface and build VRForces commands
-#include "C2SIMInterface.h"
+#include "C2SIMinterface.h"
 
 // Thread functionality
 #include <thread>
@@ -49,12 +50,15 @@ int main(int argc, char** argv)
    DtExerciseConn* exConn = new DtExerciseConn(appInitializer);
    controller->init(exConn);
 
-   //Create our text interface so we can enter text commands.
-   DtTextInterface* textIf = new DtTextInterface(controller, serverAddress);
-
-   // start a thread to read from STOMP an generate VRForces commands
+   // create a C2SIM controller to read orders and translatre them for VRF
    C2SIMinterface* c2simInterface =
-	   new C2SIMinterface(controller, serverAddress, "OrderPushIBML");
+	   new C2SIMinterface(controller, serverAddress);
+
+   //Create our text interface so we can enter text commands.
+   DtTextInterface* textIf = 
+	   new DtTextInterface(controller, serverAddress);
+
+   // start a thread to read from STOMP and generate VRForces commands
    std::thread t1(&C2SIMinterface::readStomp, textIf, c2simInterface);
 
    /*Processing: read stdin and call drainInput.
