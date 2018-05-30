@@ -1,6 +1,9 @@
 
 #include <iostream>
 #include <sstream>
+#include <sstream>
+#include <fstream>
+#include <codecvt>
 
 #pragma once
 
@@ -52,8 +55,5 @@ public:
 	std::string getDomain();
 	std::string getSubmitter();
 	std::string getFirstForwarder();
-
-
-
 };
 

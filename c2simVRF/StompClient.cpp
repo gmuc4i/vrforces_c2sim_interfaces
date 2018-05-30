@@ -95,8 +95,8 @@ void StompClient::receiveFrame(StompFrame& frame) {
 	 * Ensure our underlying stream is in a good state
 	 */
 	if (inputSource.bad()){
-		std::cout << "StompException(inputSource.bad):Socket is not in a good state\n";
-		throw StompException("Socket is not in a good state");
+		std::cerr << "StompException(inputSource.bad):Socket is not in a good state\n";
+		throw StompException("STOMP socket is not in a good state");
 	}
 
 	/*
@@ -109,14 +109,15 @@ void StompClient::receiveFrame(StompFrame& frame) {
 	 */
 	std::getline(inputSource, frame.operation);
 #ifdef DEBUG_PARSER
-	std::cout << "Received message operation '" << frame.operation << "' (" << (int)frame.operation.c_str()[0] << ")" << std::endl;
+	std::cout << "Received message operation '" << frame.operation 
+		<< "' (" << (int)frame.operation.c_str()[0] << ")" << std::endl;
 #endif
 	/*
 	 * Ensure the frame hasn't prematurely ended
 	 */
 	if (inputSource.peek() == 0) {
-		std::cout << "StompException:Unexpected termination of the frame\n";
-		throw StompException("Unexpected termination of the frame");
+		std::cout << "StompException:Unexpected termination of frame\n";
+		throw StompException("Unexpected termination of STOMP frame");
 	}
 	/*
 	 * Receive our properties
@@ -143,8 +144,8 @@ void StompClient::receiveFrame(StompFrame& frame) {
 	 * Notify the user of failure
 	 */
 	if (!inputSource.good()) {
-		std::cout << "StompException(!inputSource.good):Socket is not in a good state\n";
-		throw StompException("Socket is not in a good state");
+		std::cerr << "StompException(!inputSource.good):Socket is not in a good state\n";
+		throw StompException("STOMP socket is not in a good state");
 	}
 	/*
 	 * Read the null character
@@ -170,7 +171,7 @@ void StompClient::receiveFrame(StompFrame& frame) {
 #ifdef DEBUG_PARSER
 	std::cout << "Done reading frame" << std::endl;
 #endif
-}
+}// end StompClient::receiveFrame()
 
 void StompClient::receiveProperties(std::map<std::string, std::string> &props) {
 	/*
@@ -204,7 +205,7 @@ void StompClient::receiveProperties(std::map<std::string, std::string> &props) {
 	 * Eat the new line character
 	 */
 	inputSource.get();
-}
+}// end StompClient::receiveProperties()
 
 std::pair<std::string, std::string> StompClient::receiveProperty() {
 	/*
@@ -240,6 +241,7 @@ std::pair<std::string, std::string> StompClient::receiveProperty() {
 	}
 }
 
+// make STOMP connection over TCP connection
 void StompClient::connect(
         const bool sendLogin,
         const std::string& user,
@@ -257,7 +259,8 @@ void StompClient::connect(
 		std::cout << "Processing server response" << std::endl;
 	#endif
 	processConnect(frame);
-}
+
+}// end StompClient::connect()
 
 void StompClient::sendConnect(
         const bool sendLogin,
@@ -274,7 +277,8 @@ void StompClient::sendConnect(
 		        pass));
 	}
 	sendFrame(frame);
-}
+
+}// end StompClient::sendConnect()
 
 void StompClient::processConnect(StompFrame& frame) {
 	if (frame.operation.compare("CONNECTED") != 0) {
@@ -284,13 +288,15 @@ void StompClient::processConnect(StompFrame& frame) {
 		throw StompException(buf.str());
 	}
 	sessionID = frame.properties["session"];
-}
+
+}// end StompClient::processConnect()
 
 void StompClient::disconnect() {
 	StompFrame frame;
 	frame.operation = "DISCONNECT";
 	sendFrame(frame);
-}
+
+}// end StompClient::disconnect()
 
 const std::string& StompClient::getSessionID() const {
 	return sessionID;

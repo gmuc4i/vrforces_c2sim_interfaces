@@ -87,7 +87,10 @@ public:
 	//constructor
 	DtTextInterface(
 		DtVrfRemoteController* controller,
-		std::string serverAddress);
+		std::string serverAddress,
+		std::string restport,
+		std::string clientID,
+		bool useIbmlRef);
 
 	//destructor
 	virtual ~DtTextInterface();
@@ -118,8 +121,6 @@ public:
 
    void DtTextInterface::spotReportCallback(//const 
 		DtVrfObjectMessage* msg, void * usr);
-   void DtTextInterface::setOrderIsIbml(bool orderIsIbml);
-   void DtTextInterface::setOrderIsC2sim(bool orderIsC2sim);
 
    //-------------------------------------------------------
    //Text callback functions
@@ -251,6 +252,17 @@ protected:
 public:
    //Parse user input, call corresponding function
    void processCmd(char *buff);
+
+   // set flag to enable report messaging
+   void setStarted(bool value);
+
+   // send a REST message
+   static void sendRest(
+	   boolean formatIsC2sim,
+	   std::string restServerAddress,
+	   std::string restPort,
+	   std::string clientID,
+	   std::string report);
 
 protected:
 

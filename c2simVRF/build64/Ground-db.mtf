@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="9">
+<DtTerrainRecord class_id="0" tracking_level="0" version="4">
+	<myCoordinateSystem>Universal Transverse Mercator</myCoordinateSystem>
+	<myCoordinateSystemParameters>35:59:59.991:N,123:0:00.132:W,0</myCoordinateSystemParameters>
+	<myTerrainPatchRecords class_id="1" tracking_level="0" version="0">
+		<count>1</count>
+		<item_version>3</item_version>
+		<item class_id="2" tracking_level="0" version="3">
+			<myTerrainPatchDefinitionRecord class_id="3" tracking_level="0" version="1">
+				<myName>$(DATA_DIR)/Terrain/Ground-db/Geometry/OpenFlight/flt/terrainProxy.osg</myName>
+				<myFilename>$(DATA_DIR)\Terrain\Ground-db\Geometry\OpenFlight\flt\terrainProxy.osg</myFilename>
+				<mySchema>Terrain</mySchema>
+				<myCoordinateSystem></myCoordinateSystem>
+				<myCoordinateSystemParameters></myCoordinateSystemParameters>
+				<myFlipDds>0</myFlipDds>
+			</myTerrainPatchDefinitionRecord>
+			<mySurfaceSettingsRecord class_id="4" tracking_level="0" version="0">
+				<mySurfaceVisibleMap class_id="5" tracking_level="0" version="0">
+					<count>0</count>
+					<item_version>0</item_version>
+				</mySurfaceVisibleMap>
+			</mySurfaceSettingsRecord>
+			<myOverlaySettings class_id="6" tracking_level="0" version="0">
+				<myBaseSourceEnabled>1</myBaseSourceEnabled>
+				<myContourEnabled>0</myContourEnabled>
+				<myContourIntermediateLinesEnabled>0</myContourIntermediateLinesEnabled>
+				<myContourInterval>5</myContourInterval>
+				<myContourThickness>1</myContourThickness>
+				<myElevationEnabled>0</myElevationEnabled>
+				<myElevationGradient class_id="7" tracking_level="0" version="0">
+					<count>6</count>
+					<item_version>0</item_version>
+					<item class_id="8" tracking_level="0" version="0">
+						<myLocation>-200</myLocation>
+						<myRed>0.050000000000000003</myRed>
+						<myGreen>0.050000000000000003</myGreen>
+						<myBlue>0.25</myBlue>
+						<myAlpha>1</myAlpha>
+					</item>
+					<item>
+						<myLocation>0.5</myLocation>
+						<myRed>0.14999999999999999</myRed>
+						<myGreen>0.5</myGreen>
+						<myBlue>0.5</myBlue>
+						<myAlpha>1</myAlpha>
+					</item>
+					<item>
+						<myLocation>25</myLocation>
+						<myRed>0.5</myRed>
+						<myGreen>0.84999999999999998</myGreen>
+						<myBlue>0.5</myBlue>
+						<myAlpha>1</myAlpha>
+					</item>
+					<item>
+						<myLocation>100</myLocation>
+						<myRed>0.050000000000000003</myRed>
+						<myGreen>0.5</myGreen>
+						<myBlue>0.050000000000000003</myBlue>
+						<myAlpha>1</myAlpha>
+					</item>
+					<item>
+						<myLocation>225</myLocation>
+						<myRed>0.45000000000000001</myRed>
+						<myGreen>0.45000000000000001</myGreen>
+						<myBlue>0.050000000000000003</myBlue>
+						<myAlpha>1</myAlpha>
+					</item>
+					<item>
+						<myLocation>250</myLocation>
+						<myRed>0.94999999999999996</myRed>
+						<myGreen>0.94999999999999996</myGreen>
+						<myBlue>0.94999999999999996</myBlue>
+						<myAlpha>1</myAlpha>
+					</item>
+				</myElevationGradient>
+				<myRasterLayerRecords class_id="9" tracking_level="0" version="0">
+					<count>0</count>
+					<item_version>0</item_version>
+				</myRasterLayerRecords>
+			</myOverlaySettings>
+			<myExtractionOperations class_id="10" tracking_level="0" version="0">
+				<count>0</count>
+				<item_version>1</item_version>
+			</myExtractionOperations>
+			<myPropSettings class_id="11" tracking_level="0" version="0">
+				<myRecords class_id="12" tracking_level="0" version="0">
+					<count>0</count>
+					<item_version>0</item_version>
+				</myRecords>
+			</myPropSettings>
+			<myOceanExtractionOperations class_id="13" tracking_level="0" version="0">
+				<count>0</count>
+				<item_version>0</item_version>
+			</myOceanExtractionOperations>
+			<myTerrainTreeSettings class_id="14" tracking_level="0" version="0">
+				<myTreeScaleRandomizationEnabled>0</myTreeScaleRandomizationEnabled>
+				<myTreeOrientationRandomizationEnabled>0</myTreeOrientationRandomizationEnabled>
+				<myTreeMinScale>1</myTreeMinScale>
+				<myTreeMaxScale>1</myTreeMaxScale>
+			</myTerrainTreeSettings>
+		</item>
+	</myTerrainPatchRecords>
+	<myFeatureLayerRecords class_id="15" tracking_level="0" version="0">
+		<count>0</count>
+		<item_version>0</item_version>
+	</myFeatureLayerRecords>
+	<myGenericRecords class_id="16" tracking_level="0" version="0">
+		<count>1</count>
+		<item_version>1</item_version>
+		<item class_id="17" tracking_level="0" version="1">
+			<Type>navData</Type>
+			<Parameters class_id="18" tracking_level="0" version="0">
+				<ParameterMap class_id="19" tracking_level="0" version="0">
+					<count>1</count>
+					<item_version>0</item_version>
+					<item class_id="20" tracking_level="0" version="0">
+						<first>path</first>
+						<second>$(USER_DIR)\navData\Ground-db\Ground-db.navRuntimeConfig</second>
+					</item>
+				</ParameterMap>
+			</Parameters>
+		</item>
+	</myGenericRecords>
+	<myTerrainOperations class_id="21" tracking_level="0" version="0">
+		<count>1</count>
+		<item_version>1</item_version>
+		<item class_id="22" tracking_level="0" version="1">
+			<myOperationType>1</myOperationType>
+			<myInputType>1</myInputType>
+			<myTargetApplication>3</myTargetApplication>
+			<myIndex>0</myIndex>
+		</item>
+	</myTerrainOperations>
+	<myOceanLayerRecords class_id="23" tracking_level="0" version="0">
+		<count>0</count>
+		<item_version>0</item_version>
+	</myOceanLayerRecords>
+	<myOptionalParameters>
+		<count>0</count>
+		<item_version>0</item_version>
+	</myOptionalParameters>
+	<myDescription>A relatively small and flat ground terrain. The terrain is suitable for quickly testing behaviors and simple ground scenarios.  It is of medium visual fidelity, containing several x-trees, rocks, and a small amount of elevation variation. &lt;p&gt;It is an OpenFlight terrain with a UTM projection.</myDescription>
+	<myUseICO>0</myUseICO>
+</DtTerrainRecord>
+</boost_serialization>
+

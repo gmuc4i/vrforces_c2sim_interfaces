@@ -1,1 +1,0 @@
-java -jar BML_WSClient2_ALL.jar 10.2.10.30 Example_C2SIMv0.6.8_Move_Order.xml jmp c2sim

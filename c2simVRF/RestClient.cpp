@@ -1,15 +1,13 @@
 #include "RestClient.h"
-#include "cpprest/http_client.h"
-#include "cpprest/filestream.h"
-#include <sstream>
-#include <codecvt>
 
-using namespace web;
-using namespace web::http;
-using namespace web::http::client;
+#define BUFFERLENGTH 10000
 
-#include <iostream>
+// Boost
+#include <boost/asio.hpp>
+
 using namespace std;
+
+boost::asio::ip::tcp::iostream restStream;
 
 /**
 *  RestClient
@@ -31,8 +29,8 @@ RestClient::RestClient()
 	host = "10.2.10.30";    
 	port = "8080";   
 	path = "BMLServer/bml";
-	domain = "ibml09";
-	submitter = "jmp";
+	domain = "BML";
+	submitter = "vrforces";
 	firstForwarder = "";
 }
 RestClient::RestClient(std::string hostRef) 
@@ -40,11 +38,10 @@ RestClient::RestClient(std::string hostRef)
 	host = hostRef;
 	port = "8080";
 	path = "BMLServer/bml";
-	domain = "ibml09";
-	submitter = "jmp";
+	domain = "BML";
+	submitter = "vrforces";
 	firstForwarder = "";
 }
-
 
 /****************************/
 /*  getters and setters     */
@@ -160,143 +157,6 @@ std::string RestClient::getSubmitter()
 	return firstForwarder;
 }
 
-/*
-// Upload a file to an HTTP server.
-pplx::task<void> UploadFileToHttpServerAsync(uri url, std::wstring xmlPath)
-{
-	using concurrency::streams::file_stream;
-	using concurrency::streams::basic_istream;
-	using concurrency::streams::istream;
-	using concurrency::streams::container_buffer;
-	using concurrency::streams::wstringstream;
-
-	// Open stream to file. 
-	return file_stream<unsigned char>::open_istream(xmlPath).then(
-		[&](pplx::task<basic_istream<unsigned char>> previousTask)
-	{
-		try
-		{
-			auto fileStream = previousTask.get();
-
-			// Make HTTP request with the file stream as the body.
-			http_client client(url);
-			http_request request(methods::POST);
-			request.headers().add(L"Content-Type", L"application/xml");
-			request.headers().add(L"Accept", L"application/xml");
-
-			request.set_body(L"dfghjkjhgfdsdfgyuj");
-
-			return client.request(request).then([fileStream](pplx::task<http_response> rep)
-			{
-				fileStream.close();
-				std::wostringstream ss;
-				try
-				{
-					auto response = rep.get();
-					ss << L"Server returned returned status code " << response.status_code() << L"." << std::endl;
-					std::string responseBody = utility::conversions::to_utf8string(response.to_string());
-
-					if (responseBody.find("<status>Error</status>") == 0) {
-						//throw RestException::exception("Error recieved from server");
-						std::cout << "Error recieved from server\n\n";
-						std::cout << responseBody;
-					}
-
-					else {
-						std::cout << responseBody;
-						//return responseBody;
-					}
-				}
-				catch (const http_exception& e)
-				{
-					ss << e.what() << std::endl;
-				}
-				std::wcout << ss.str();
-			});
-		}
-		catch (const std::system_error& e)
-		{
-			std::wcout << "file not found";
-			std::wostringstream ss;
-			ss << e.what() << std::endl;
-			std::wcout << ss.str();
-			// Return an empty task. 
-			return pplx::task_from_result();
-		}
-	});
-
-
-}
-
-// Upload a file to an HTTP server.
-pplx::task<void> UploadFileToHttpServer(std::string url, std::string xmlPath)
-{
-	using concurrency::streams::file_stream;
-	using concurrency::streams::basic_istream;
-	using concurrency::streams::istream;
-	using concurrency::streams::container_buffer;
-	using concurrency::streams::wstringstream;
-
-	// Open stream to file. 
-	return file_stream<unsigned char>::open_istream(xmlPath).then([&](pplx::task<basic_istream<unsigned char>> previousTask)
-	{
-		try
-		{
-			auto fileStream = previousTask.get();
-
-
-			// Make HTTP request with the file stream as the body.
-			http_client client(url);
-
-			http_request request(methods::POST);
-			request.headers().add(L"Content-Type", L"application/xml");
-			request.headers().add(L"Accept", L"application/xml");
-
-			request.set_body(L"dfghjkjhgfdsdfgyuj");
-
-			return client.request(request).then([fileStream](pplx::task<http_response> rep)
-			{
-				fileStream.close();
-				std::wostringstream ss;
-				try
-				{
-					auto response = rep.get();
-					ss << L"Server returned returned status code " << response.status_code() << L"." << std::endl;
-					std::string responseBody = utility::conversions::to_utf8string(response.to_string());
-
-					if (responseBody.find("<status>Error</status>") == 0) {
-						//throw RestException::exception("Error recieved from server");
-						std::cout << "Error recieved from server\n\n";
-						std::cout << responseBody;
-					}
-
-					else {
-						std::cout << responseBody;
-						//return responseBody;
-					}
-				}
-				catch (const http_exception& e)
-				{
-					ss << e.what() << std::endl;
-				}
-				std::wcout << ss.str();
-			});
-		}
-		catch (const std::system_error& e)
-		{
-			std::wcout << "file not found";
-			std::wostringstream ss;
-			ss << e.what() << std::endl;
-			std::wcout << ss.str();
-			// Return an empty task. 
-			return pplx::task_from_result();
-		}
-	});
-
-
-}
-*/
-
 
 /********************/
 /*  bmlRequest()    */
@@ -305,70 +165,123 @@ pplx::task<void> UploadFileToHttpServer(std::string url, std::string xmlPath)
 * Submit a bml transaction to the host specified
 * @param xmlTransaction - An XML string containing the bml
 * @return - The response returned by the host BML server
+* build of http without library by JMP 16May18
 */
 
 std::string RestClient::bmlRequest(std::string xmlTransaction)
 {
-	std::string url;
-	if (submitter.compare("") == 0)
-		//throw RestException::exception();
-		return "Error - Submitter not specified.\n";
-	if (domain.compare("") == 0)
-		//setDomain("NO_DOMAIN");
-		return "Error - Domain not specified.\n";
-
-	url = "http://" + host
-		+ ":" + port
-		+ "/" + path
-		+ "?submitterID=" + submitter
-		+ "&domain=" + domain
-		;
-	if (firstForwarder.compare("") != 0)
-		url += "&forwarders=" + firstForwarder;
-	utility::string_t u = utility::conversions::to_string_t(url);
-
-	try
-	{
-		// build and submit the HTTP transaction
-		http_client client(u);
-		http_request request(methods::POST);
-		request.headers().add(L"Content-Type", L"application/xml");
-		request.headers().add(L"Accept", L"application/xml");
-
-		request.set_body(xmlTransaction);
-
-		std::string responseBody = "";
-		client.request(request).then([&](pplx::task<http_response> res)
-		{
-			auto response = res.get();
-			std::cout << "Server returned status code " << response.status_code() << ".";
-
-			responseBody = utility::conversions::to_utf8string(response.to_string());
-
-			if (responseBody.find("<status>Error</status>") == 0) {
-				//throw RestException::exception("Error received from server");
-				std::cout << "Error received from server\n\n";
-				//std::cout << responseBody;
-			}
-
-			else {
-				//std::cout << responseBody;
-			}
-
-		}).wait();
-
-		return responseBody;
+	// build parameter string for http header
+	if (submitter.compare("") == 0) {
+		std::cout << "error in RestClient.bmlRequest - Submitter not specified.\n";
+		return "";
 	}
-	catch (const web::http::http_exception& e) {
-		std::cout << "HTTP Exception: " << e.what();
-		return "HTTP Exception " + std::string(e.what());
+	if (domain.compare("") == 0) {
+		std::cout << "error in RestClient.bmlRequest - Domain not specified.\n";
+		return "";
+	}
+	std::string parameters;
+	parameters += "?submitterID=" + submitter;
+	parameters += "&protocol=" + domain;
+	if (firstForwarder.compare("") != 0)
+		parameters += "&forwarders=" + firstForwarder;
+
+	// exchange C2SIM HTTP transaction with server
+	try
+	{	
+		// open a boost connection
+		try {
+			// Establish the connection and associate it with StompClient
+			restStream.connect(host.c_str(), port.c_str());
+			if (!restStream) {
+				std::cerr << "error opening REST connection to " <<
+					host << ":" << port << std::endl;
+				return "";
+			}
+		}
+		catch (const std::exception& e) {
+			std::cerr << "exception " << e.what()
+				<< " opening REST connection to " <<
+				host << ":" << port << std::endl;
+			return "";
+		}
+
+		// assemble and POST http request header
+		std::string httpRequest;
+		httpRequest += "POST /" + path;
+		httpRequest += parameters;
+		httpRequest += " HTTP/1.1\r\n";
+		httpRequest += "Content-Type:application/xml\r\n";
+		httpRequest += "Accept:application/xml\r\n";
+		httpRequest += "Host:" + host + ":8080\r\n";
+		httpRequest += "Connection:.keep-alive\r\n";
+		httpRequest += "Content-Length:";
+		std::stringstream transBuf;
+		transBuf << xmlTransaction;
+		std::stringstream lengthBuf;
+		lengthBuf << transBuf.str().length();
+		httpRequest += lengthBuf.str() + "\r\n";
+		httpRequest += "\r\n";
+		httpRequest += xmlTransaction + "\r\n";
+
+		// send the header and XML document
+		restStream << httpRequest;
+		restStream.flush();
+
+		// receive http response and check that response is OK.
+		std::string httpVersion;
+		restStream >> httpVersion;
+		unsigned int statusCode;
+		restStream >> statusCode;
+		std::string statusMessage;
+		std::getline(restStream, statusMessage);
+		if (!restStream || httpVersion.substr(0, 5) != "HTTP/") {
+			std::cerr << "invalid REST response " << httpVersion << "\n";
+			return "";
+		}
+		if (statusCode != 200)
+		{
+			std::cerr << "REST response returned with status code " << statusCode << "\n";
+			return "";
+		}
+
+		// read past the response headers, which are terminated by a blank line
+		// in the process capture Content-Length
+		string responseLine;
+		int contentLength = BUFFERLENGTH;
+		while (!restStream.eof() && !restStream.bad()) {
+			std::getline(restStream, responseLine);
+			if (responseLine.substr(0, 15) == "Content-Length:") {
+				contentLength = std::stoi(responseLine.substr(15));
+			}
+			if (responseLine.length() <= 1) break;
+		}
+		if (restStream.eof() || restStream.bad()) {
+			std::cerr << "error reading HTTP response header in REST\n";
+			return "";
+		}
+
+		// read the response
+		char* httpResponse = new char[BUFFERLENGTH];
+		httpResponse[0] = '\0';
+		restStream.read(httpResponse, contentLength);
+		if (restStream.bad()) {
+			std::cerr << "error reading HTTP response in REST\n";
+			return "";
+		}
+
+		// NOTE: the following depends on correct value of Content-Length in server output
+		// null-terminate part of response ending </result>
+		//httpResponse[strstr(httpResponse, "</result>") - httpResponse + strlen("</result>")] = '\0';debugx
+		httpResponse[contentLength] = '\0';
+		std::string returnResponse(httpResponse, contentLength);
+		free (httpResponse);
+		return returnResponse;
 	}
 	catch (const std::exception& e) {
-		std::cout << "I/O Exception: " << e.what();
-		return "IO Exception" + std::string(e.what());
+		std::cout << "exception in RestClient: " << e.what();
+		return "exception in RestClient: " + std::string(e.what());
 	}
-
-}
+}// end RestClient::bmlRequest
 
 
 RestClient::~RestClient()

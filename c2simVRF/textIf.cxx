@@ -3,6 +3,8 @@
 ** All rights reserved.
 *******************************************************************************/
 
+// updated to VRForces4.5 by JMP 12May18 by adding DtUUID()
+
 // from Doug Reece for reportCallback
 #include "vrfmsgs/reportMessage.h"
 #include "vrftasks/taskCompleteReport.h"
@@ -79,14 +81,16 @@
 #define RESTORE()
 #endif
 
-bool gotIbmlOrder = false;
-bool gotC2simOrder = false;
+bool textIfUseIbml = false;
+bool simStarted = false;
+void DtTextInterface::setStarted(bool value){ simStarted = value; }
 
 const char* terrainDir = "..\\userData\\terrains\\";
 const char* scenariosDir = "..\\userData\\scenarios\\";
 static bool monitorResourcesCallbackAdded = false;
 std::string restServerAddress;
-boost::asio::ip::tcp::iostream restStream;
+std::string restPortNumber;
+std::string clientIDCode;
 static int taskNumberCompleted = 0;
 
 
@@ -180,12 +184,12 @@ std::string ibml09GSRpart5(
 // pieces of C2SIM position report
 std::string c2simPositionPart1(
 	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-	"<C2SIM_Position_Report xmlns=\"http://www.sisostds.org/schemas/c2sim/1.0\" \n"
+	"<CWIX_Position_Report xmlns=\"http://www.sisostds.org/schemas/c2sim/1.0\" \n"
 	"xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" \n"
 	"xsi:schemaLocation = \"http://www.sisostds.org/schemas/c2sim/1.0 C2SIM_Experimental.xsd\"> \n"
-	"<ActorEntity><ActorEntityID>");
+	"<ActorEntity><Name>");
 std::string c2simPositionPart2(
-	"</ActorEntityID></ActorEntity><ReportingEntity><ActorEntityID>");
+	"</Name></ActorEntity><ReportingEntity><ActorEntityID>");
 std::string c2simPositionPart3(
 	"</ActorEntityID></ReportingEntity><ReportingTime>");
 std::string c2simPositionPart4(
@@ -196,19 +200,30 @@ std::string c2simPositionPart6(
 	"</Longitude></Location>"
 	"<HealthStatus><OperationalStatusCode>");
 std::string c2simPositionPart7(
-	"</OperationalStatusCode><StrengthPercentage>");
+	"</OperationalStatusCode>");// removed <StrengthPercentage> 24May18
 std::string c2simPositionPart8(
-	"</StrengthPercentage><HostilityCode>");
+	"<HostilityCode>");
 std::string c2simPositionPart9(
-	"</HostilityCode></HealthStatus></C2SIM_Position_Report>");
+	"</HostilityCode></HealthStatus></CWIX_Position_Report>");
 
 // send REST message
-void sendRest(std::string report) {
+void DtTextInterface::sendRest(
+	boolean formatIsC2sim, 
+	std::string restServerAddress,
+	std::string restPort,
+	std::string clientID,
+	std::string report) {
 	
 	// make a RestClient and use it to send transaction
 	RestClient* restClient = new RestClient(restServerAddress);
-	restClient->bmlRequest(report);
-	restClient->~RestClient();
+	restClient->setPort(restPort);
+	restClient->setSubmitter(clientID);
+	std::string restResponse = restClient->bmlRequest(report);
+
+	// output the status from response
+	std::string afterStatus = restResponse.substr(restResponse.find("<status>",0));
+	std::string status = afterStatus.substr(0, afterStatus.find("</status>", 0)+9);
+	std::cout << "RESPONSE:" << status << "\n";
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -216,16 +231,6 @@ void sendRest(std::string report) {
 //
 // These two functions handle 3 report types; they could be factored into
 // 3 functions, or combined into 1
-
-// let C2SIMinterface select report type based on order type
-void DtTextInterface::setOrderIsIbml(bool isIbmlOrder)
-{
-	gotIbmlOrder = isIbmlOrder;
-}
-void DtTextInterface::setOrderIsC2sim(bool isC2simOrder)
-{
-	gotC2simOrder = isC2simOrder;
-}
 
 void reportCallback(const DtVrfObjectMessage* msg, void* usr)
 {
@@ -275,42 +280,40 @@ void reportCallback(const DtVrfObjectMessage* msg, void* usr)
 					name = strtok(NULL, "\"");
 					latChars = strtok(NULL, " ");
 					lonChars = strtok(NULL, " ");
-					std::cout << "position report for " << name << " " << latChars << "/" << lonChars << "\n";
-
+					std::cout << "position report for " << name << " " << latChars << "/" << lonChars;
+					if (!textIfUseIbml)
+						std::cout << " format C2SIM\n";
+					else
+						std::cout << " format IBML09\n";
+					
 					// send a report - this is incomplete - it only does taskerIntent, unitID, and position
 					std::string nameString = std::string(name);
 					std::string latString = std::string(latChars);
 					std::string lonString = std::string(lonChars);
-
-					// choose report format matching order received
-					if (gotIbmlOrder) 
-						sendRest(
+					
+					// choose report format matching order received, only after started
+					if (simStarted)
+					if (!textIfUseIbml) {
+						DtTextInterface::sendRest(true, restServerAddress, restPortNumber, clientIDCode, 
+							c2simPositionPart1 + nameString + c2simPositionPart2 + nameString +
+							c2simPositionPart3 + "2018-02-07T06:00:00Z" + // reporting time
+							c2simPositionPart4 + latString +
+							c2simPositionPart5 + lonString +
+							c2simPositionPart6 + "OP" + // operational status
+							c2simPositionPart7 +        // strength percentage remove 24May18
+							c2simPositionPart8 + "FR" + // hostility code
+							c2simPositionPart9);
+					}
+					else {
+						DtTextInterface::sendRest(false, restServerAddress, restPortNumber, clientIDCode,
 							ibml09GSRpart1 + nameString + ibml09GSRpart2 + nameString +
 							ibml09GSRpart3 + latString + ibml09GSRpart4 + lonString + ibml09GSRpart5);
-					if (gotC2simOrder) {
-						sendRest(
-							c2simPositionPart1 + nameString + c2simPositionPart2 + nameString +
-							c2simPositionPart3 + "UNK" + // reporting time
-							c2simPositionPart4 + latString +
-							c2simPositionPart5 + lonString +
-							c2simPositionPart6 + "UNK" + // operational status
-							c2simPositionPart7 + "UNK" + // stremgth percentage
-							c2simPositionPart8 + "UNK" + // hostility code
-							c2simPositionPart9);
-						std::string sendit = c2simPositionPart1 + nameString + c2simPositionPart2 + nameString +//debuugx
-							c2simPositionPart3 + "UNK" + // reporting time
-							c2simPositionPart4 + latString +
-							c2simPositionPart5 + lonString +
-							c2simPositionPart6 + "UNK" + // operational status
-							c2simPositionPart7 + "UNK" + // stremgth percentage
-							c2simPositionPart8 + "UNK" + // hostility code
-							c2simPositionPart9;
 					}
 				}
 			}
 		}
-	}
-}
+	}// end if (msg)
+}// end reportCallback
 
 
 void DtTextInterface::spotReportCallback(//const 
@@ -792,7 +795,7 @@ void DtTextInterface::monitorResourcesCmd(char * str, DtTextInterface* a)
 
       DtIfResourceMonitorRequest req;
 
-      req.setUUID(entity);
+      req.setUUID(DtUUID(entity));
 
       if (time)
       {
@@ -839,7 +842,7 @@ void DtTextInterface::removeMonitorResourcesCmd(char * str, DtTextInterface* a)
 
       DtIfResourceMonitorRequest req;
 
-      req.setUUID(entity);
+      req.setUUID(DtUUID(entity));
       req.setMonitorPeriod(10);
       req.setMonitorBy(DtCondExprSimTimeType);
 
@@ -981,7 +984,7 @@ void DtTextInterface::deleteCmd(char* s, DtTextInterface* a)
    else
    {
       char* strname = strtok(s, "\"");
-      a->controller()->deleteObject(DtString(strname));
+      a->controller()->deleteObject(DtUUID(strname));
    }
 }
 
@@ -1196,13 +1199,20 @@ Cmd *lookupCmd(char *cmdname)
     return NULL;
 }
 
+// constructor
 DtTextInterface::DtTextInterface(
-  DtVrfRemoteController* controller,
-	std::string serverAddressRef) :
+	DtVrfRemoteController* controller,
+	std::string serverAddressRef,
+	std::string restPortRef,
+	std::string clientIDRef,
+	bool useIbmlRef) :
   kbInterest(0), myTimeToQuit(0), 
     myController(controller)
 {
    restServerAddress = serverAddressRef;
+   restPortNumber = restPortRef;
+   clientIDCode = clientIDRef;
+   textIfUseIbml = useIbmlRef;
 
    DtInfo("Scenario directory: %s\n", scenariosDir); 
    DtInfo("Terrain directory: %s\n", terrainDir);
@@ -1217,8 +1227,8 @@ DtTextInterface::DtTextInterface(
    myController->addScenarioSavedCallback(ScenarioSavedCb, NULL);
 
    kbInterest++;
-   prompt();
-
+   //prompt();
+   
    //from Doug Reece
    DtVrfObjectMessageExecutive* msgExec = myController->objectMessageExecutive();
    // This is necessary to capture the taskComplete report messages, which go 
@@ -1487,7 +1497,7 @@ void DtTextInterface::patrolRoute(char* str)
       return;
    }
 
-   controller()->patrolAlongRoute(name, route);
+   controller()->patrolAlongRoute(DtUUID(name), DtUUID(route));
 }
 
 void DtTextInterface::moveToPoint(char* str)
@@ -1506,7 +1516,7 @@ void DtTextInterface::moveToPoint(char* str)
       DtInfo("\tusage: task moveToPoint <\"name\"> <\"waypoint\">\n"); 
       return;
    }
-   controller()->moveToWaypoint(name, point);
+   controller()->moveToWaypoint(DtUUID(name), DtUUID(point));
 }
 
 void DtTextInterface::follow(char* str)
@@ -1526,7 +1536,7 @@ void DtTextInterface::follow(char* str)
       return;
    }
    DtVector offset(10.0, 0.0, 0.0);
-   controller()->followEntity(name, leader, offset);
+   controller()->followEntity(DtUUID(name), DtUUID(leader), offset);
 }
 
 void DtTextInterface::wait(char* str)
@@ -1546,7 +1556,7 @@ void DtTextInterface::wait(char* str)
    }
 
    DtTime time = atof(t);
-   controller()->waitDuration(name, time);
+   controller()->waitDuration(DtUUID(name), time);
 }
 
 
@@ -1582,7 +1592,7 @@ void DtTextInterface::setPlan(char* str)
    //! in code:
    //!
    //! DtUUID alphaUUID = DtUUID::markingTextResolutionManager().mapMarkingTextToUUID("alpha");
-   moveTask.setControlPoint("alpha");
+   moveTask.setControlPoint(DtUUID("alpha"));
 
    DtSetHeadingRequest headingReq;
    headingReq.setHeading(2.094395);
@@ -1619,23 +1629,23 @@ void DtTextInterface::setPlan(char* str)
    block->addToStart(ifStatement.clone());
 
    //Assign the plan to the given entitiy
-   controller()->assignPlanByName(name, plan);
+   controller()->assignPlanByName(DtUUID(name), plan);
 
    //Let's subscribe to the given entity's plan messages. 
    //This will let us know whether or "assignPlan" command 
    //was successfull.  Also, it will also notify us if any
    //changes were made to the plan.
-   controller()->subscribePlan(name, planCb, NULL);
+   controller()->subscribePlan(DtUUID(name), planCb, NULL);
 
    //Let's register a callback for current statement
    //messages.  Our callback will be invoked whenever the entity
    //starts a new statement in the plan.
-   controller()->addPlanStatementCallback(name, planStmtCb, NULL);
+   controller()->addPlanStatementCallback(DtUUID(name), planStmtCb, NULL);
 
    //Let's also register a callback for when the entity completes
    //the plan.  Inside our callback, we unsubscribe to this entity's
    //plan messages and unregister our current statement callback.
-   controller()->addPlanCompleteCallback(name, planCompleteCb, controller());
+   controller()->addPlanCompleteCallback(DtUUID(name), planCompleteCb, controller());
 }
 
 void DtTextInterface::planCb(const DtUUID& name, 
@@ -1707,7 +1717,7 @@ void DtTextInterface::setLabel(char* str)
       return;
    }
 
-   controller()->setLabel(objId, label);
+   controller()->setLabel(DtUUID(objId), label);
 }
 
 void DtTextInterface::setLocation(char* str)
@@ -1729,7 +1739,7 @@ void DtTextInterface::setLocation(char* str)
    DtVector vec;
    sscanf(point, "%lf,%lf,%lf", &vec[0], &vec[1], &vec[2]);
 
-   controller()->setLocation(name, vec);
+   controller()->setLocation(DtUUID(name), vec);
 }
 
 void DtTextInterface::setFuel(char* str)
@@ -1749,7 +1759,7 @@ void DtTextInterface::setFuel(char* str)
    }
 
    double fa = atof(amount);
-   controller()->setResource(name, "fuel", fa);
+   controller()->setResource(DtUUID(name), "fuel", fa);
 }
 
 void DtTextInterface::setTarget(char* str)
@@ -1769,7 +1779,7 @@ void DtTextInterface::setTarget(char* str)
       return ;
    }
 
-   controller()->setTarget(name, target);
+   controller()->setTarget(DtUUID(name), DtUUID(target));
 }
 
 void DtTextInterface::setRestore(char* str)
@@ -1786,7 +1796,7 @@ void DtTextInterface::setRestore(char* str)
       DtInfo("\tusage: set restore <\"name\"> \n"); 
       return;
    }
-   controller()->restore(name);
+   controller()->restore(DtUUID(name));
 }
 
 void DtTextInterface::scenarioSnapshotResponseCb(DtSimMessage* msg, void* usr)

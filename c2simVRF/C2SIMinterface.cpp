@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------*
-|     Copyright 2017 Networking and Simulation Laboratory         |
+|     Copyright 2018 Networking and Simulation Laboratory         |
 |         George Mason University, Fairfax, Virginia              |
 |                                                                 |
 | Permission to use, copy, modify, and distribute this            |
@@ -15,18 +15,27 @@
 | with use of this software is expressly assumed by the user.     |
 *-----------------------------------------------------------------*/
 /*
-To run demo on Sandbox:
+VR-Forces C2SIM interface v1.2
+To run demo on Sandbox: 
 1. start VR Forces; at Config panel clock Launch;
 on Startup panel run Bogaland9; wait until icon shows on map
-2. c2simVRF/remoteControlDIS; wait for READY FOR C2SIM ORDERS
+(this can be slow)
+2. vrforces4.5\bin64\c2simVRF; wait for READY FOR C2SIM ORDERS
 3. send an order by C2SIM/RESTclient/REST-moveOrder.bat
 4. if order is for unit not previously introduced, new icon will be made
    at first set of coordinates in order
 5. icon should move on route from order and reports should be emitted
 6. to see reports run C2SIM/STOMPclient/STOMP.bat or run BMLC2GUI
 7. accepts IBML09 or C2SIMv0.6.8 schema and produces report 
-   from same schema
+   from same schema, selected by parameter 6 of main
+   to use IBML09 see command-line parameters under main.cxx
+8. can be run without initialization phase, in which case
+   initial position of object is first (or only) geocoordinate
+   in the task
 */
+
+// updated to VRForces4.5 by JMP 12May18 by adding DtUUID()
+
 #include "C2SIMinterface.h"
 #include <queue>
 #include <vlutil/vlProcessControl.h>
@@ -41,11 +50,8 @@ on Startup panel run Bogaland9; wait until icon shows on map
 #include <tchar.h>
 #include <windows.h>
 #include <math.h>
+#include <thread>
 #include "xerces_utils.h"
-#include "C2SIMOrderHandler.h"
-#include "stomp-util.h"
-#include "StompClient.h"
-#include "RestClient.h"
 
 typedef struct StompFrame_t { // copied from StompClient.h
 	/**
@@ -70,23 +76,29 @@ boost::asio::ip::tcp::iostream stompStream;
 static int timesCalled = 0;
 DtVrfRemoteController* cs2sim_controller;
 SAXParser* parser;
-C2SIMOrderHandler* c2simOrderHandler;
+C2SIMxmlHandler* c2simXmlHandler;
 ErrorHandler* errHandler;
 std::string stompServerAddress;
+std::string stompServerPort;
 static string vrfTerrain;
 const static double degreesToRadians = 57.2957795131L;
 int numberOfObjects = 0;
+bool useIbml;
 #define MAX_OBJECTS 100
 std::string objectNames[MAX_OBJECTS];
+mee::stomp::StompClient* client;
 
 // constructor
 C2SIMinterface::C2SIMinterface(
 	DtVrfRemoteController* controller,
-	std::string serverAddressRef)
+	std::string serverAddressRef,
+	std::string stompPortRef,
+	bool useIbmlRef)
 {
 	// pick up parameters from main()
 	stompServerAddress = serverAddressRef;
-	std::cout << "C2SIMinterface stompServerAddress:" << stompServerAddress << "\n";
+	stompServerPort = stompPortRef;
+	useIbml = useIbmlRef;
 
 	// initialize Xerces
 	try {
@@ -103,45 +115,17 @@ C2SIMinterface::C2SIMinterface(
 	parser = new SAXParser();
 	parser->setDoNamespaces(false);
 	parser->setDoSchema(false);
-	c2simOrderHandler = new C2SIMOrderHandler();
-	errHandler = (ErrorHandler*)c2simOrderHandler;
-	parser->setDocumentHandler(c2simOrderHandler);
+	c2simXmlHandler = new C2SIMxmlHandler(useIbml);
+	errHandler = (ErrorHandler*)c2simXmlHandler;
+	parser->setDocumentHandler(c2simXmlHandler);
 	parser->setErrorHandler(errHandler);
-
-	// connect to STOMP server
-	try {
-		// Establish the connection and associate it with StompClient
-		std::stringstream buf;
-		buf << stompPort;
-		stompStream.connect(stompServerAddress.c_str(), buf.str());
-		if (stompStream) {
-			client = new mee::stomp::StompClient(stompStream);
-			client->connect(false, "", "");
-			client->subscribe("/topic/BML", (mee::stomp::AcknowledgeMode)1, "COMMENT");
-		}
-		else {
-			std::cerr
-				<< stompServerAddress << ":" << stompPort
-				<< std::endl;
-		}
-	}
-	catch (mee::stomp::StompException e) {
-		std::cerr << "Exception: " << e.what() << std::endl;
-	}
-	catch (std::exception &e) {
-		std::cerr << "Exception: " << e.what() << std::endl;
-	}
-	catch (...) {
-		std::cerr << "An unexpected exception has occured." << std::endl;
-	}
 
 }// end constructor
 
-
- // destructor
+// destructor
 C2SIMinterface::~C2SIMinterface() {
 	delete parser;
-	delete c2simOrderHandler;
+	delete c2simXmlHandler;
 	client->disconnect();
 	XMLPlatformUtils::Terminate();
 }
@@ -168,7 +152,7 @@ void C2SIMinterface::geodeticToGeocentric(char* lat, char* lon, char* alt,
 		stod(lon) / degreesToRadians,
 		stod(alt));
 	DtVector geoc = geod.geocentric();
-
+	
 	// move into output strings
 	x = doubleToString(geoc.x());
 	y = doubleToString(geoc.y());
@@ -194,7 +178,7 @@ boolean C2SIMinterface::isNewObject(string objectName)
 {
 	// range check
 	if (numberOfObjects >= MAX_OBJECTS) {
-		std::cout << "error - too many different objects (" << MAX_OBJECTS << ")\n";
+		std::cerr << "error - too many different objects (" << MAX_OBJECTS << ")\n";
 		return false;
 	}
 	
@@ -208,6 +192,39 @@ boolean C2SIMinterface::isNewObject(string objectName)
 	objectNames[numberOfObjects++] = objectName;
 	return true;
 }
+
+// convert string coordinates to double
+void C2SIMinterface::convertCoordinates(
+	string lat, string lon, string elev,
+	double &x, double &y, double &z) 
+{
+	// convert input geodetic coordinates to geocentric to return
+	if (elev == NULL)elev = "0.0e0";
+	DtGeodeticCoord geod(
+		std::stod(lat) / degreesToRadians,
+		std::stod(lon) / degreesToRadians,
+		std::stod(elev));
+	DtVector geoc = geod.geocentric();
+
+	// check for converted elevation below MSL
+	DtGeodeticCoord checkGeod;
+	checkGeod.setGeocentric(geoc);
+	if (checkGeod.alt() < 0.0e0) {
+		std::cerr << "negative elevation set to 5.0m when recoding coordinate (" <<
+			lat << "," << lon << "," << elev << ")\n";
+		DtGeodeticCoord hackGeod(
+			std::stod(lat) / degreesToRadians,
+			std::stod(lon) / degreesToRadians,
+			5.0e0);
+		geoc = geod.geocentric();
+	}
+
+	// return geocentric 
+	x = geoc.x();
+	y = geoc.y();
+	z = geoc.z();
+}
+// end C2SIMinterface::convertCoordinates()
 
 
  // read an XML file and return it as wstring
@@ -249,151 +266,355 @@ void C2SIMinterface::writeAnXmlFile(char* filename, string content) {
 }// end writeAnXmlFile()
 
 
- // thread to listen for incoming STOMP message; parse the message,
+// create a tank object in VR-Forces
+void createTank(DtTextInterface* textIf, DtVector vec, std::string objectId) {
+	textIf->controller()->createEntity(
+		DtTextInterface::vrfObjectCreatedCb, (void*)"C2SIM",
+		DtEntityType(1, 1, 225, 1, 1, 3, 0), vec,
+		DtForceFriendly, 90.0, objectId);
+}
+
+
+// create a tank object in VR-Forces
+void createScoutUnit(DtTextInterface* textIf, DtVector vec, std::string objectId) {
+	textIf->controller()->createAggregate(
+		DtTextInterface::vrfObjectCreatedCb, (void*)"C2SIM",
+		DtEntityType(11, 1, 0, 14, 30, 0, 0), vec,
+		DtForceFriendly, 90.0, objectId);
+}
+
+
+ // thread function to listen for incoming STOMP message; parse the message,
  // and use the result to send a command to VRForces
-void C2SIMinterface::readStomp(DtTextInterface* textIf, C2SIMinterface* c2simInterface)
-{
+void C2SIMinterface::readStomp(
+	DtTextInterface* textIf, 
+	C2SIMinterface* c2simInterface,
+	bool skipInitialize,
+	std::string clientId) {
+
 	HRESULT hr = CoInitialize(NULL);
 	mee::stomp::StompFrame inputFrame;
 	mee::stomp::StompClient stompClient(stompStream);
-
+	bool inInitializePhase;
+	bool setInInitializePhase = true;
+	Unit* units = new Unit[MAXINIT];
+	Task* tasks = new Task[MAXTASKS];
+	int numberOfUnits = 0;
+	
+	// connect to STOMP server
+	std::cout << "connecting STOMP stream to " 
+		<< stompServerAddress << ":" << stompServerPort << "\n";
+	try {
+		// Establish the connection and associate it with StompClient
+		std::stringstream buf;
+		buf << stompServerPort;
+		stompStream.connect(stompServerAddress.c_str(), buf.str());
+		if (stompStream) {
+			client = new mee::stomp::StompClient(stompStream);
+			client->connect(false, "", "");
+			client->subscribe("/topic/BML", (mee::stomp::AcknowledgeMode)1, "COMMENT");
+		}
+		else {
+			std::cerr
+				<< stompServerAddress << ":" << stompServerPort
+				<< std::endl;
+		}
+	}
+	catch (mee::stomp::StompException e) {
+		std::cerr << "Exception: " << e.what() << std::endl;
+	}
+	catch (std::exception &e) {
+		std::cerr << "Exception: " << e.what() << std::endl;
+	}
+	catch (...) {
+		std::cerr << "An unexpected exception has occured." << std::endl;
+	}
 	if (SUCCEEDED(hr)) {
+		try{
+			// wait a second for VR-Forces to start
+			// TODO: figure out how to synchronize this
+			DtSleep(1.0);
+			if (!skipInitialize)
+				std::cout << "READY FOR C2SIM INITIALIZATION\n";
+			else 
+				std::cout << "CONFIGURED TO SKIP INITIALIZATION\n";
 
-		std::cout << "READY FOR C2SIM ORDERS\n";
+			// loop reading XML documents, 
+			// parsing them into VR-Forces controls 
+			while (true) {
 
-		char testXml[] = "C:\\temp\\holdXml.xml";
+				inInitializePhase = setInInitializePhase;
+				if (!inInitializePhase || skipInitialize)
+					std::cout << "READY FOR C2SIM ORDER\n";
 
-		// loop reading XML Orders, parsing them into VR-Forces commands
-		// and pushing to command queue
-		while (true) {
-			
-			// read a STOMP message and write it to temp file
-			stompClient.receiveFrame(inputFrame);
-			C2SIMinterface::writeAnXmlFile(testXml, inputFrame.message.str());
-			
-			// use SAX to parse XML 
-			c2simOrderHandler->C2SIMOrderHandler::startC2SIMParse();
-			try {
-				parser->parse(testXml);
-			}
-			catch (const XMLException& toCatch) {
-				char* message = XMLString::transcode(toCatch.getMessage());
-				cout << "Exception message is: \n" << message << "\n";
-				XMLString::release(&message);
-			}
-			catch (const SAXParseException& toCatch) {
-				char* message = XMLString::transcode(toCatch.getMessage());
-				cout << "Exception message is: \n" << message << "\n";
-				XMLString::release(&message);
-			}
-			catch (...) {
-				cout << "unexpected Exception in SAX parsing\n";
-			}
+				// read a STOMP message and parse it
+				stompClient.receiveFrame(inputFrame);
+				//std::cout << inputFrame.message.str();//debugx
 
-			// check that we parsed something; if not go to next order
-			if (!c2simOrderHandler->C2SIMOrderHandler::orderRootTagFound())continue;
-			cout << "Completed parse of file:" << testXml << "\n";
+				// use SAX to parse XML from a STOMP frame
+				c2simXmlHandler->C2SIMxmlHandler::startC2SIMParse(units, tasks);
+				try {
+					// run the parser, which will callback
+					// our XML handler, from XML in memory
+					std::string xmlString = inputFrame.message.str();
+					int xmlSize = xmlString.size();
+					char* xmlCstr = new char[xmlSize + 1];
+					strncpy(xmlCstr, xmlString.c_str(), xmlSize);
+					MemBufInputSource xmlInMemory(
+						(const XMLByte*)xmlCstr,
+						xmlSize,
+						"xmlInMemory",
+						false);
+					parser->parse(xmlInMemory);
+					delete xmlCstr;
+					inputFrame.message.str(std::string(""));
+				}
+				catch (const XMLException& toCatch) {
+					char* message = XMLString::transcode(toCatch.getMessage());
+					std::cerr << "Exception message is: \n" << message << "\n";
+					XMLString::release(&message);
+				}
+				catch (const SAXParseException& toCatch) {
+					char* message = XMLString::transcode(toCatch.getMessage());
+					std::cerr << "Exception message is: \n" << message << "\n";
+					XMLString::release(&message);
+				}
+				catch (...) {
+					std::cerr << "unexpected Exception in SAX parsing\n";
+				}
 
-			// extract parsed values
-			char* taskersIntent = new char[MAXCHARARRAY];
-			char* dateTime = new char[MAXCHARARRAY];
-			char* unitId = new char[MAXCHARARRAY];
-			double x[MAXPOINTS]; // geocentric coordinates
-			double y[MAXPOINTS];
-			double z[MAXPOINTS];
+				// check that we parsed something; if not go to next order
+				string parsedRootTag = c2simXmlHandler->getRootTag();
+				if (parsedRootTag.length() == 0)continue;
 
-			// parse out order elements
+				// ignore report messages
+				if (parsedRootTag == "CWIX_Position_Report")continue;
+				if (parsedRootTag == "BMLReport")continue;
+				
 
-			// get and set type of order - used to determine type of report
-			textIf->setOrderIsIbml(c2simOrderHandler->getOrderTypeIbml());
-			textIf->setOrderIsC2sim(c2simOrderHandler->getOrderTypeC2sim());
+				// check for simulation control message
+				if (parsedRootTag == "C2SIM_Simulation_Control") {
+					string controlState = c2simXmlHandler->getControlState();
+					std::cout << "received simulation control state:" << controlState << "\n";
 
-			// get taskersIntent
-			taskersIntent = c2simOrderHandler->C2SIMOrderHandler::getTaskersIntent();
+					// pass the control on to VR-Forces
+					if (controlState == "RUNNING") {
+						textIf->controller()->run();
+						textIf->setStarted(true);
+					}
+					else if (controlState == "PAUSED") {
+						textIf->controller()->pause();
+						textIf->setStarted(false);
+					}
+					else if (controlState == "STOPPED") {
+						textIf->setTimeToQuit(true);
+						textIf->setStarted(false);
+						Sleep(1000);
+						break;
+					}
+					// set value for inInitializePhase at  
+					// start of next STOMP receiveFrame
+					else if (controlState == "UNINITIALIZED") {
+						setInInitializePhase = true;
+					}
+					else if (controlState == "INITIALIZED") {
+						setInInitializePhase = false;
+					}
+						continue;
+				}
+				std::cout << "completed parse of document with root tag " << parsedRootTag << "\n";
 
-			// get dateTime
-			dateTime = c2simOrderHandler->C2SIMOrderHandler::getDateTime();
+				// if in the initialize phase the input can only be Military_Organization
+				if (inInitializePhase && !skipInitialize) {
+					if (parsedRootTag != "C2SIM_MilitaryOrganization") {
+						std::cerr << "received unexpected root tag:" << parsedRootTag << "\n";
+						continue;
+					}
+					// extract values from Military_Organization message
+					numberOfUnits = c2simXmlHandler->C2SIMxmlHandler::getNumberOfUnits();
+					if (numberOfUnits < 1) {
+						std::cout << "no units found - can't run simulation\n";
+						Sleep(5000);
+						break;
+					}
+					// initialize in VR-Forces units that match this Submitter
+					for (int unitNumber = 0; unitNumber < numberOfUnits; ++unitNumber) {
 
-			// get arrays of geocentric point coordiantes
-			int numberOfPoints =
-				c2simOrderHandler->getRoutePoints(x, y, z);
-			if (numberOfPoints == 0) {
-				std::cout << "no location given - can't execute order\n";
-				continue;
-			}
+						// determine what name we'll use for it; favor UUID
+						Unit newUnit = units[unitNumber];
+						if (newUnit.submitter == NULL)continue;
+						if (newUnit.submitter != clientId)continue;
+						std::string newObjectId;
+						if (newUnit.name != NULL)
+							newObjectId = newUnit.name;
+						else {
+							std::cerr << "position " << (unitNumber + 1)
+								<< " in Military_Organization has no name - omitting it\n";
+							continue;
+						}
 
-			// get unitID
-			unitId = c2simOrderHandler->C2SIMOrderHandler::getUnitId();
+						// instantiate the object in VR-Forces
+						if (isNewObject(newObjectId)) {
 
-			cout << "C2SIMinterface got order unitID:" << unitId << " dateTime:" << dateTime << " intent:" << taskersIntent << "\n";
+							// check that coordinates were provided
+							if ((newUnit.latitude == NULL) || (newUnit.longitude == NULL)) {
+								std::cout << "missing latitude/longitude for unit " << newObjectId
+									<< " - ommiting it\n";
+								continue;
+							}
 
-			// misc parameters
-			string taskersIntentString = taskersIntent;
-			string dateTimeString = dateTime;
-			string unitIDString = unitId;
+							// convert coordinate to geocentric and create the entity
+							double x, y, z;
+							if (newUnit.elevationAgl == NULL)
+								newUnit.elevationAgl = "0.0e0";
+							c2simInterface->convertCoordinates(
+								newUnit.latitude, newUnit.longitude, newUnit.elevationAgl, x, y, z);
+							DtVector newUnitVec(x, y, z);
+							std::string echelon = newUnit.echelon;
+							if (echelon == "SQUAD")
+								createScoutUnit(textIf, newUnitVec, newObjectId);
+							else
+								createTank(textIf, newUnitVec, newObjectId);
+						}// end if (isNewObject(newObjectId))
+					}
+					// next line probably this will beat the server
+					// message that causes the same effect
+					inInitializePhase = false;
+					continue;// to end of while(true) 
 
-			// check for quit command
-			if (taskersIntentString == "QUIT")break;
-			std::cout << "starting to issue VRF commands\n";
+				}// end if (inInitializePhase...
 
-			// previously we generated a "new" command at this point
-			// now we're expecting the user to do that on VR-Forces GUI
-			// during startup, giving more flexibility to Sandbox users
+				// not control or initialization; must be an oder
+				// loop through all tasks from the order
+				int taskCount = c2simXmlHandler->getNumberOfTasks();
+				std::cout << "order contains " << taskCount << " tasks\n";
+				for (int taskNumber = 0; taskNumber < taskCount; ++taskNumber) {
 
-			// make a tank object to run on it
-			// TODO: objects other than tanks
-			if (isNewObject(unitId)) {
-				DtVector vec(x[0], y[0], z[0]);
-				textIf->controller()->createEntity(
-					DtTextInterface::vrfObjectCreatedCb, (void*)"tank",
-					DtEntityType(1, 1, 225, 1, 1, 3, 0), vec,
-					DtForceFriendly, 90.0, unitId);
-			}
+					// find parameters of the task
+					Task* thisTask = &tasks[taskNumber];
 
-			// create waypoints for all remaining numberOfPoints
-			string pointNames[MAXPOINTS];
-			for (int pointNumber = 1; pointNumber < numberOfPoints; ++pointNumber) {
-
-				// combine coordinates to a DtVector
-				DtVector vec(x[pointNumber], y[pointNumber], z[pointNumber]);
-
-				// name a point name ending in i (up to 99)
-				std::ostringstream oss;
-				oss << "Pt " << pointNumber;
-				pointNames[pointNumber] = oss.str();
+					// Start a thread to execute the task TODO: figure out how to join t2
+					string taskId;
+					taskId << (taskNumber + 1);
+					std::thread t2(&C2SIMinterface::executeTask, taskId, textIf,
+						skipInitialize, thisTask, numberOfUnits, units);
+					t2.detach();
 					
-				// create a point with these properties
-				textIf->controller()->
-					createWaypoint(
-						DtTextInterface::vrfObjectCreatedCb, 
-						(void*)"waypoint", 
-						vec,
-						pointNames[pointNumber]);
-			}
+				}//end for (taskNumber...
 
-			// wait a little bit 
-			DtSleep(1.);//debug (is there a race here?)
-				
-			// run the tank to each waypoint and wait until it gets there
-			for (int pointNumber = 1; pointNumber < numberOfPoints; ++pointNumber) {
-				textIf->controller()->moveToWaypoint(unitId, pointNames[pointNumber]);
-				textIf->controller()->run();
-				while(textIf->getTaskNumberCompleted() < pointNumber)
-					DtSleep(.1);
-			}
-				
-			// next: extract other parameters from order and use them to
-			// create VR-Forces commands for a range of IBML09 'what' code Orders, bypassing
-			// the DtTextInterface by calling for example (textIf.cpp line 895) 
-			// a->moveToPoint(str) in place of text command "moveToPoint".
-			// Also figure out how to fix the compile message that says version not recognized
-			
-		}// end while(true)
+			}// end while(true)
 
-		// tell VRForces to shutdown
-		textIf->setTimeToQuit(true);
-		cout << "C2SIM VRF interface quitting\n";
+			// tell VRForces to shutdown
+			textIf->setTimeToQuit(true);
+			cout << "C2SIM VRF interface quitting\n";
+		}
+		catch (...) {
+			std::cerr << "unanticipated Exception in interface\n";
+		}
+	}// end if (SUCCEEDED)
 
-	}// end readStomp()
+}// end readStomp()
 
-}// end class C2SIMinterface
+
+// thread function to execute a C2SIM Task in VR-Forces
+void C2SIMinterface::executeTask(
+	string taskId,
+	DtTextInterface* textIf,
+	bool skipInitialize,
+	Task* thisTask,
+	int numberOfUnits,
+	Unit* units) 
+{
+	// extract parameters from this task
+	string dateTime = thisTask->dateTime;
+	string unitId = thisTask->unitId;
+	int numberOfPoints = 0;
+
+	// find smallest count of lat/lon/elev points
+	numberOfPoints = thisTask->latitudePointCount;
+	if (thisTask->longitudePointCount < numberOfPoints)
+		numberOfPoints = thisTask->longitudePointCount;
+	if (useIbml && (thisTask->elevationPointCount > 0) &&
+		(thisTask->elevationPointCount < numberOfPoints))
+		numberOfPoints = thisTask->elevationPointCount;
+	if (numberOfPoints == 0) {
+		std::cout << "no location given - can't execute order\n";
+		return;
+	}
+
+	// get arrays of geocentric point coordinates
+	double x[MAXPOINTS];
+	double y[MAXPOINTS];
+	double z[MAXPOINTS];
+	for (int pointNumber = 0; pointNumber < numberOfPoints; ++pointNumber) {
+		C2SIMinterface::convertCoordinates(
+			thisTask->latitudes[pointNumber],
+			thisTask->longitudes[pointNumber],
+			thisTask->elevations[pointNumber],
+			x[pointNumber],
+			y[pointNumber],
+			z[pointNumber]);
+
+	}// end for (int pointNumber...
+
+	// confirm Unit was initialized (if not, skip this task)
+	if (!skipInitialize) {
+		int unitIndex;
+		for (unitIndex = 0; unitIndex < numberOfUnits; ++unitIndex)
+		if (unitId == units[unitIndex].name)break;
+		if (unitIndex >= numberOfUnits)return;
+	}
+	cout << "C2SIMinterface got order for unitID:" << unitId
+		<< " dateTime:" << dateTime << "\n";
+	std::cout << "starting to issue VRF commands\n";
+
+	// previously we generated a "new" VRF command at this point
+	// now we're expecting the user to do that on VR-Forces GUI
+	// during startup, giving more flexibility to Sandbox users
+
+	// make a tank object to run on it
+	// TODO: objects other than tanks
+	int firstWaypoint = 0;
+	if (skipInitialize)
+	if (isNewObject(unitId)) {
+		DtVector vec(x[0], y[0], z[0]);
+		if (unitId == "1/24A1_CAV")
+			createScoutUnit(textIf, vec, unitId);
+		else
+			createTank(textIf, vec, unitId);
+		firstWaypoint = 1;
+	}
+
+	// create waypoints for all remaining numberOfPoints
+	string pointNames[MAXPOINTS];
+	for (int pointNumber = firstWaypoint; pointNumber < numberOfPoints; ++pointNumber) {
+
+		// combine coordinates to a DtVector
+		DtVector vec(x[pointNumber], y[pointNumber], z[pointNumber]);
+
+		// name a point name ending in i (up to 99)
+		std::ostringstream oss;
+		oss << "Task_" << taskId << "_Pt_" << pointNumber;
+		pointNames[pointNumber] = oss.str();
+
+		// create a point with these properties
+		textIf->controller()->
+			createWaypoint(
+			DtTextInterface::vrfObjectCreatedCb,
+			(void*)"waypoint",
+			vec,
+			pointNames[pointNumber]);
+	}
+
+	// wait a little bit 
+	DtSleep(1.);//TODO: (is there a race here?)
+
+	// run the tank to each waypoint and wait until it gets there
+	for (int pointNumber = 1; pointNumber < numberOfPoints; ++pointNumber) {
+		textIf->controller()->moveToWaypoint(DtUUID(unitId), DtUUID(pointNames[pointNumber]));
+		if(skipInitialize)textIf->controller()->run();
+		while (textIf->getTaskNumberCompleted() < pointNumber)
+			DtSleep(.1);
+	}
+
+}// end executeTask()
