@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<C2SIM_Order 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ 
+xsi:schemaLocation="http://www.sisostds.org/schemas/c2sim/1.0 ../../../Desktop/C2SIM-DCorner/C2SIM_Xml_Schema_CWIX2018_v1.1.xsd"
+ 
+xmlns="http://www.sisostds.org/schemas/c2sim/1.0">
+
+
+    <OrderingEntity>
+
+        <Name>1/22_INF</Name>
+
+    </OrderingEntity>
+
+    <OrderID>EXAMPLE</OrderID>
+
+    <OrderIssuedTime>2018-02-06T10:56:09Z</OrderIssuedTime>
+
+    <Task>
+
+        <ActionTaskActivityCode>MOVE</ActionTaskActivityCode>
+
+        <Why>Hold the hill</Why>
+
+        <PerformingEntity>
+
+            <Name>1/22A_INF</Name>
+
+        </PerformingEntity>
+
+        <AffectedWho>
+
+            <Name>ENEMY_A</Name>
+
+        </AffectedWho>
+
+        <TaskID>MOVE EXAMPLE UNIT</TaskID>
+
+        <ValidTimeInterval>
+
+            <StartTime>2018-02-07T06:00:00Z</StartTime>
+        </ValidTimeInterval>
+        <Where><RouteWhere>
+            <Point >
+            	<Latitude>58.2</Latitude>
+            	<Longitude>14.9</Longitude>
+            </Point>
+	      <Point >
+                <Latitude>58.21</Latitude>
+                <Longitude>14.91</Longitude>
+            </Point>
+		  <Point >
+ 			    <Latitude>58.22</Latitude>
+                <Longitude>14.92</Longitude>
+		</Point>
+		<Point >
+                <Latitude>58.23</Latitude>
+                <Longitude>14.93</Longitude>
+        </Point>
+	    </RouteWhere></Where>
+    </Task>
+</C2SIM_Order>

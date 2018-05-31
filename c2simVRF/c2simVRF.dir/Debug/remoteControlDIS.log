@@ -1,0 +1,7 @@
+﻿  main.cxx
+  Unknown compiler version - please run the configure tests and report the results
+  Unknown compiler version - please run the configure tests and report the results -pragma
+  remoteControlDIS.vcxproj -> C:\MAK\vrforces4.4.2\examples\c2simVRF\..\..\examples\c2simVRF\build64\Debug\c2simInterface.exe
+  remoteControlDIS.vcxproj -> ../../examples/c2simVRF/build64/Debug/remoteControlDISd.pdb (Full PDB)
+  xcopy "C:\MAK\vrforces4.4.2\examples\c2simVRF\..\..\examples\c2simVRF\build64\Debug\c2simInterface.exe" ..\..\bin64 /y /q
+  1 File(s) copied

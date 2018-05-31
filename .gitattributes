@@ -1,0 +1,2 @@
+.\c2simVRF\build64\Debug\QtWebKit4.dll filter=lfs diff=lfs merge=lfs -text
+.\c2simVRF\c2simVRFinterface.sdf filter=lfs diff=lfs merge=lfs -text

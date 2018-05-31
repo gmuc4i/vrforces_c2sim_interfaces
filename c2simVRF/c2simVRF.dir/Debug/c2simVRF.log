@@ -1,0 +1,114 @@
+﻿Build started 5/28/2018 2:36:25 PM.
+     1>Project "C:\MAK\vrforces4.5\examples\c2simVRF\c2simVRF.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /I../../include /I../../vrlinkstuff/include /Ixercesc\include\xercesc /I/include /I/include /Zi /nologo /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D NO_DFD_SUPPORT /D _DEBUG /D NOMINMAX /D BOOST_NO_RVALUE_REFERENCES /D _SCL_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_WARNINGS /D DT_DLL_BUILD /D DT_USE_DLL /D DtDIS=1 /D IS_64BIT /D DEBUG_PLUGIN_SUPPORT /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo".\c2simVRF.dir\Debug\\" /Fd".\c2simVRF.dir\Debug\vc120.pdb" /Gd /TP /wd4005 /wd4251 /wd4267 /wd4311 /wd4312 /wd4275 /wd4675 /wd4250 /errorReport:prompt C2SIMxmlHandler.cpp RestClient.cpp StompClient.cpp xerces_utils.cpp C2SIMinterface.cpp main.cxx remoteControlInit.cxx textIf.cxx
+         C2SIMxmlHandler.cpp
+         RestClient.cpp
+         Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately. For example:
+         - add -D_WIN32_WINNT=0x0501 to the compiler command line; or
+         - add _WIN32_WINNT=0x0501 to your project's Preprocessor Definitions.
+         Assuming _WIN32_WINNT=0x0501 (i.e. Windows XP target).
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1102): warning C4996: 'WSASocketA': Use WSASocketW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3457) : see declaration of 'WSASocketA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1662): warning C4996: 'WSAAddressToStringA': Use WSAAddressToStringW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3556) : see declaration of 'WSAAddressToStringA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1721): warning C4996: 'WSAStringToAddressA': Use WSAStringToAddressW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3623) : see declaration of 'WSAStringToAddressA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1822): warning C4996: 'gethostbyaddr': Use getnameinfo() or GetNameInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(2216) : see declaration of 'gethostbyaddr'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1871): warning C4996: 'gethostbyname': Use getaddrinfo() or GetAddrInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(2238) : see declaration of 'gethostbyname'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_select_interrupter.ipp(55): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(1850) : see declaration of 'inet_addr'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_select_interrupter.ipp(68): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(1850) : see declaration of 'inet_addr'
+         StompClient.cpp
+         Please define _WIN32_WINNT or _WIN32_WINDOWS appropriately. For example:
+         - add -D_WIN32_WINNT=0x0501 to the compiler command line; or
+         - add _WIN32_WINNT=0x0501 to your project's Preprocessor Definitions.
+         Assuming _WIN32_WINNT=0x0501 (i.e. Windows XP target).
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1102): warning C4996: 'WSASocketA': Use WSASocketW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3457) : see declaration of 'WSASocketA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1662): warning C4996: 'WSAAddressToStringA': Use WSAAddressToStringW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3556) : see declaration of 'WSAAddressToStringA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1721): warning C4996: 'WSAStringToAddressA': Use WSAStringToAddressW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3623) : see declaration of 'WSAStringToAddressA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1822): warning C4996: 'gethostbyaddr': Use getnameinfo() or GetNameInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(2216) : see declaration of 'gethostbyaddr'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1871): warning C4996: 'gethostbyname': Use getaddrinfo() or GetAddrInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(2238) : see declaration of 'gethostbyname'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_select_interrupter.ipp(55): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(1850) : see declaration of 'inet_addr'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_select_interrupter.ipp(68): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(1850) : see declaration of 'inet_addr'
+         xerces_utils.cpp
+         C2SIMinterface.cpp
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1102): warning C4996: 'WSASocketA': Use WSASocketW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\Winsock2.h(3457) : see declaration of 'WSASocketA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1662): warning C4996: 'WSAAddressToStringA': Use WSAAddressToStringW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\Winsock2.h(3556) : see declaration of 'WSAAddressToStringA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1721): warning C4996: 'WSAStringToAddressA': Use WSAStringToAddressW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\Winsock2.h(3623) : see declaration of 'WSAStringToAddressA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1822): warning C4996: 'gethostbyaddr': Use getnameinfo() or GetNameInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\Winsock2.h(2216) : see declaration of 'gethostbyaddr'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1871): warning C4996: 'gethostbyname': Use getaddrinfo() or GetAddrInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\Winsock2.h(2238) : see declaration of 'gethostbyname'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_select_interrupter.ipp(55): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\Winsock2.h(1850) : see declaration of 'inet_addr'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_select_interrupter.ipp(68): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\Winsock2.h(1850) : see declaration of 'inet_addr'
+         main.cxx
+         remoteControlInit.cxx
+         textIf.cxx
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1102): warning C4996: 'WSASocketA': Use WSASocketW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3457) : see declaration of 'WSASocketA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1662): warning C4996: 'WSAAddressToStringA': Use WSAAddressToStringW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3556) : see declaration of 'WSAAddressToStringA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1721): warning C4996: 'WSAStringToAddressA': Use WSAStringToAddressW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(3623) : see declaration of 'WSAStringToAddressA'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1822): warning C4996: 'gethostbyaddr': Use getnameinfo() or GetNameInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(2216) : see declaration of 'gethostbyaddr'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_ops.ipp(1871): warning C4996: 'gethostbyname': Use getaddrinfo() or GetAddrInfoW() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(2238) : see declaration of 'gethostbyname'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_select_interrupter.ipp(55): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(1850) : see declaration of 'inet_addr'
+     1>C:\MAK\vrforces4.5\include\boost/asio/detail/impl/socket_select_interrupter.ipp(68): warning C4996: 'inet_addr': Use inet_pton() or InetPton() instead or define _WINSOCK_DEPRECATED_NO_WARNINGS to disable deprecated API warnings
+                 C:\Program Files (x86)\Windows Kits\8.1\Include\um\winsock2.h(1850) : see declaration of 'inet_addr'
+         Generating Code...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"build64\Debug\c2simVRFd.exe" /INCREMENTAL /NOLOGO /LIBPATH:../../vrlinkstuff/lib64 /LIBPATH:../../lib64 /LIBPATH:../../lib64/Debug /LIBPATH:/lib64 /LIBPATH:/lib64/Debug "xercesc\lib\xerces-c_3.lib" "xercesc\lib\xerces-c_static_3.lib" "xercesc\lib\xerces-c_3D.lib" "xercesc\lib\xerces-c_static_3D.lib" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib matrixd.lib mtld.lib ../../lib64/vrfmsgsd.lib ../../lib64/vrfutild.lib ../../lib64/vrftasksd.lib ../../lib64/vrfcontrolDISd.lib ../../lib64/vrfpland.lib ../../vrlinkstuff/lib64/vlutild.lib ../../vrlinkstuff/lib64/vlDISd.lib ../../vrlinkstuff/lib64/vld.lib ../../lib64/vrfExtProtocold.lib /NODEFAULTLIB:msvcrt.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"../../examples/c2simVRF/build64/Debug/c2simVRFd.pdb" /SUBSYSTEM:CONSOLE /LARGEADDRESSAWARE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"../../examples/c2simVRF/build64/Debug/c2simVRFd.lib" /MACHINE:X64  /machine:x64 /debug .\c2simVRF.dir\Debug\C2SIMxmlHandler.obj
+         .\c2simVRF.dir\Debug\RestClient.obj
+         .\c2simVRF.dir\Debug\StompClient.obj
+         .\c2simVRF.dir\Debug\xerces_utils.obj
+         .\c2simVRF.dir\Debug\C2SIMinterface.obj
+         .\c2simVRF.dir\Debug\main.obj
+         .\c2simVRF.dir\Debug\remoteControlInit.obj
+         .\c2simVRF.dir\Debug\textIf.obj
+         c2simVRF.vcxproj -> C:\MAK\vrforces4.5\examples\c2simVRF\build64\Debug\c2simVRFd.exe
+       PostBuildEvent:
+         setlocal
+         echo xcopy "C:\MAK\vrforces4.5\examples\c2simVRF\build64\Debug\c2simVRFd.exe" ..\..\bin64 /y /q
+         if %errorlevel% neq 0 goto :cmEnd
+         :cmEnd
+         endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+         :cmErrorLevel
+         exit /b %1
+         :cmDone
+         if %errorlevel% neq 0 goto :VCEnd
+         setlocal
+         xcopy "C:\MAK\vrforces4.5\examples\c2simVRF\build64\Debug\c2simVRFd.exe" ..\..\bin64 /y /q
+         if %errorlevel% neq 0 goto :cmEnd
+         :cmEnd
+         endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+         :cmErrorLevel
+         exit /b %1
+         :cmDone
+         if %errorlevel% neq 0 goto :VCEnd
+         :VCEnd
+         xcopy "C:\MAK\vrforces4.5\examples\c2simVRF\build64\Debug\c2simVRFd.exe" ..\..\bin64 /y /q
+         1 File(s) copied
+     1>Done Building Project "C:\MAK\vrforces4.5\examples\c2simVRF\c2simVRF.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:22.14

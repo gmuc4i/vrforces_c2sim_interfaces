@@ -1,0 +1,27 @@
+﻿Build started 5/30/2018 4:06:29 PM.
+     1>Project "C:\MAK\vrforces4.4.2\examples\c2simVRF\c2simVRF.vcxproj" on node 2 (Build target(s)).
+     1>Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"build64\Release\c2simVRF.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:../../lib64 /LIBPATH:../../../vrlink5.2.1/lib64 /LIBPATH:C:\MAK\vrlink5.2.1/lib64 /LIBPATH:C:\MAK\vrlink5.2.1/lib64/Release "xercesc\lib\xerces-c_3.lib" "xercesc\lib\xerces-c_static_3.lib" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib ../../../vrlink5.2.1/lib64/vlutil.lib ../../../vrlink5.2.1/lib64/matrix.lib ../../../vrlink5.2.1/lib64/mtl.lib ../../../vrlink5.2.1/lib64/vlDIS.lib ../../../vrlink5.2.1/lib64/vl.lib ../../lib64/vrfcontrolDIS.lib ../../lib64/vrfExtProtocol.lib ../../lib64/vrfmsgs.lib ../../lib64/vrfplan.lib ../../lib64/vrftasks.lib ../../lib64/vrfutil.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:"../../examples/c2simVRF/build64/Release/c2simVRF.pdb" /SUBSYSTEM:CONSOLE /LARGEADDRESSAWARE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"../../examples/c2simVRF/build64/Release/c2simVRF.lib" /MACHINE:X64  /machine:x64 c2simVRF.dir/Release/C2SIMxmlHandler.obj
+         c2simVRF.dir/Release/RestClient.obj
+         c2simVRF.dir/Release/StompClient.obj
+         c2simVRF.dir/Release/xerces_utils.obj
+         c2simVRF.dir/Release/C2SIMinterface.obj
+         c2simVRF.dir/Release/main.obj
+         c2simVRF.dir/Release/remoteControlInit.obj
+         c2simVRF.dir/Release/textIf.obj
+     1>textIf.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::system_category(void)" (?system_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>RestClient.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::system_category(void)" (?system_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>StompClient.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::system_category(void)" (?system_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>C2SIMinterface.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::system_category(void)" (?system_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>main.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::system_category(void)" (?system_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>textIf.obj : error LNK2019: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::generic_category(void)" (?generic_category@system@boost@@YAAEBVerror_category@12@XZ) referenced in function "void __cdecl `dynamic initializer for 'DtStopMovingShipTaskType''(void)" (??__EDtStopMovingShipTaskType@@YAXXZ)
+     1>RestClient.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::generic_category(void)" (?generic_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>StompClient.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::generic_category(void)" (?generic_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>C2SIMinterface.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::generic_category(void)" (?generic_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>main.obj : error LNK2001: unresolved external symbol "class boost::system::error_category const & __cdecl boost::system::generic_category(void)" (?generic_category@system@boost@@YAAEBVerror_category@12@XZ)
+     1>build64\Release\c2simVRF.exe : fatal error LNK1120: 2 unresolved externals
+     1>Done Building Project "C:\MAK\vrforces4.4.2\examples\c2simVRF\c2simVRF.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.34

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WhereLocation Sequence="0">
+    <GDC>
+        <Latitude>36.004755</Latitude>
+        <Longitude>-122.994539</Longitude>
+        <ElevationAGL>0.0</ElevationAGL>
+    </GDC>
+</WhereLocation>
+<WhereLocation Sequence="1">
+    <GDC>
+        <Latitude>36.013731</Latitude>
+        <Longitude>-122.989015</Longitude>
+        <ElevationAGL>0.0</ElevationAGL>
+    </GDC>
+</WhereLocation>
+<WhereLocation Sequence="2">
+    <GDC>
+        <Latitude>36.004769</Latitude>
+        <Longitude>-122.988993</Longitude>
+        <ElevationAGL>0.0</ElevationAGL>
+    </GDC>
+</WhereLocation>

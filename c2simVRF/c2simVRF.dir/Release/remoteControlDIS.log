@@ -1,0 +1,8 @@
+﻿C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140\Microsoft.CppBuild.targets(392,5): warning MSB8028: The intermediate directory (remoteControlDIS.dir/Release/) contains files shared from another project (c2simVRF.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  textIf.cxx
+  Unknown compiler version - please run the configure tests and report the results -pragma
+  Unknown compiler version - please run the configure tests and report the results
+CL : warning : Boost.Signals is no longer being maintained and is now deprecated. Please switch to Boost.Signals2. To disable this warning message, define BOOST_SIGNALS_NO_DEPRECATION_WARNING.
+  remoteControlDIS.vcxproj -> C:\MAK\vrforces4.4.2\examples\c2simVRF\..\..\examples\c2simVRF\build64\Release\c2simVRFinterface.exe
+  xcopy "C:\MAK\vrforces4.4.2\examples\c2simVRF\..\..\examples\c2simVRF\build64\Release\c2simVRFinterface.exe" ..\..\bin64 /y /q
+  1 File(s) copied
