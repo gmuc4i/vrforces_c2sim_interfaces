@@ -223,7 +223,7 @@ void DtTextInterface::sendRest(
 	// output the status from response
 	std::string afterStatus = restResponse.substr(restResponse.find("<status>",0));
 	std::string status = afterStatus.substr(0, afterStatus.find("</status>", 0)+9);
-	std::cout << "RESPONSE:" << status << "\n";
+	//std::cout << "REPORT PUSH RESPONSE:" << status << "\n";
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -277,7 +277,23 @@ void reportCallback(const DtVrfObjectMessage* msg, void* usr)
 				keyword = strtok(charReport, " ");
 				if (strcmp(keyword, "TRACKING") == 0)
 				{
+					// extract name
 					name = strtok(NULL, "\"");
+					std::string nameString = std::string(name);
+
+					// hack for CWIX: report on only SmWhel 1 and 5
+					// and replace their names with USA1 and USA2
+					// NOTE: SmWhel number relationship to USA number
+					// depends on order of initialization
+					std::string firstSix = nameString.substr(0, 6);
+					if (firstSix == "SmWhel") {
+						std::string smwhelIndex = nameString.substr(7, 1);
+						if (smwhelIndex != "1" && smwhelIndex != "5")return;
+						if (smwhelIndex == "1")nameString = "USA2";
+						if (smwhelIndex == "5")nameString = "USA1";
+					}
+
+					// extract lat and lon as strings
 					latChars = strtok(NULL, " ");
 					lonChars = strtok(NULL, " ");
 					std::cout << "position report for " << name << " " << latChars << "/" << lonChars;
@@ -286,8 +302,7 @@ void reportCallback(const DtVrfObjectMessage* msg, void* usr)
 					else
 						std::cout << " format IBML09\n";
 					
-					// send a report - this is incomplete - it only does taskerIntent, unitID, and position
-					std::string nameString = std::string(name);
+					// send a report - this is incomplete - it only does unitID, and position
 					std::string latString = std::string(latChars);
 					std::string lonString = std::string(lonChars);
 					
@@ -696,68 +711,44 @@ void DtTextInterface::createCmd(char* str, DtTextInterface* a)
 
 void DtTextInterface::createAggregate(char* str)
 {   
-   //Let's parse the command string and then call
-   //the corresponding method on DtVrfRemoteController.
-   char *point;
-   point = strtok(&str[9], " ");
+	//Let's parse the command string and then call
+	//the corresponding method on DtVrfRemoteController.
+	char *point;
+	point = strtok(&str[9], " ");
 
-   if (!point)
-   {
-      DtInfo("\tusage: aggregate <geocentric_location>\n"); 
-      return;
-   }
+	if (!point)
+	{
+		DtInfo("\tusage: aggregate <geocentric_location>\n");
+		return;
+	}
 
-   DtVector vec;
-   sscanf(point, "%lf,%lf,%lf", &vec[0], &vec[1], &vec[2]);
-   //Here we are creating the indivual parts. We register with the vrfObjectCreatedCb callback because
-   //we can't add the subordinates to our aggregate until they've actually been created. Timing can be tricky here if the indivual is 
-   //created before the aggregate. In this simple example we create the aggregate entity first then it's subordinates.
-   
-   //When manaully creating aggregates and their components this timing must be considered. One means is to check if the aggregate has been created
-   //and if not, keep a list of the individuals and in a callback once the desired aggregate has been created then add them to the aggregate's 
-   //organization. 
+	DtVector vec;
+	sscanf(point, "%lf,%lf,%lf", &vec[0], &vec[1], &vec[2]);
+	//Here we are creating the indivual parts. We register with the vrfObjectCreatedCb callback because
+	//we can't add the subordinates to our aggregate until they've actually been created. Timing can be tricky here if the indivual is 
+	//created before the aggregate. In this simple example we create the aggregate entity first then it's subordinates.
 
-   //Create the aggregate entity at desired position with name "tankPlt"
-   DtString pltName = "Tank_Plt_" + DtString(theNextAggregateId++);
+	//When manaully creating aggregates and their components this timing must be considered. One means is to check if the aggregate has been created
+	//and if not, keep a list of the individuals and in a callback once the desired aggregate has been created then add them to the aggregate's 
+	//organization. 
 
-   /*controller()->createAggregate(
-	   vrfObjectCreatedCb, 
-	   (void*)myController,
-	   DtEntityType(11, 1, 225, 3, 0, 0, 0), vec,
-	   DtForceFriendly, 0,pltName);*/
+	//Create the aggregate entity at desired position with name "tankPlt"
+	DtString pltName = "Tank_Plt_" + DtString(theNextAggregateId++);
 
-   controller()->createAggregate(
-	   vrfObjectCreatedCb,
-	   (void*)myController,
-	   DtEntityType(1, 2, 225, 1, 9, 0, 0), vec,
-	   DtForceFriendly, 0, pltName);
+	unsigned long requestId = controller()->generateRequestId();
+	DtObjectType oType(DtObjectTypePseudoAggregate,
+		DtEntityType(11, 1, 225, 3, 0, 0, 0));
 
-   //Now create the individual tanks that will make up this aggregate
-   DtString subName = "Plt_Sub_";
+	DtList vertices;
+	DtVector *vecPtr = new DtVector(vec);
+	vertices.add(vecPtr);
 
-   /*controller()->createEntity(
-      vrfObjectCreatedCb, (void*)myController,
-      DtEntityType(1, 1, 225, 1, 1, 3, 0), vec,
-      DtForceFriendly, 90.0,subName + DtString(theNextSubordinateId++));*/
+	controller()->sendVrfObjectCreateMsg(
+		DtSimSendToAll, requestId, pltName, oType, vertices,
+		DtString::nullString(), DtAppearance::nullAppearance(),
+		DtForceFriendly, false, false, 0.0, true);
 
-   controller()->createEntity(
-	   vrfObjectCreatedCb, (void*)myController,
-	   DtEntityType(1, 2, 225, 1, 9, 0, 0), vec,
-	   DtForceFriendly, 90.0, subName + DtString(theNextSubordinateId++));
-
-   
-   //Change the offet from each other to create an intial triangle formation
-   vec[DtX]+=10;
-   controller()->createEntity(
-	   vrfObjectCreatedCb, (void*)myController,
-	   DtEntityType(1, 2, 225, 1, 9, 0, 0), vec,
-	   DtForceFriendly, 90.0,subName + DtString(theNextSubordinateId++));
-   
-   vec[DtY]+=10;
-   controller()->createEntity(
-	   vrfObjectCreatedCb, (void*)myController,
-	   DtEntityType(1, 2, 225, 1, 9, 0, 0), vec,
-	   DtForceFriendly, 90.0,subName + DtString(theNextSubordinateId++));
+	delete vecPtr;
 }
 
 void DtTextInterface::resourcesProcessedCb(DtSimMessage* msg, void* usr)

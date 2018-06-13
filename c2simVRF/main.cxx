@@ -35,9 +35,9 @@ static int timesCalled = 0;
 
 int main(int argc, char** argv)
 {
-	// extract our 5 arguments: 
+	// extract our 6 arguments: 
 	// IP address, REST port number, STOMP port number, clientID, skipInitialize
-	std::cout << "Starting VR-Forces C2SIM Interface\n";
+	std::cout << "Starting VR-Forces C2SIM Interface v1.3 compatible VR-Forcesv4.5\n";
 	if (argc < 2)
 		std::cout << "using default server IP address:" << serverAddress << "\n";
 	else

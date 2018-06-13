@@ -15,7 +15,7 @@
 | with use of this software is expressly assumed by the user.     |
 *-----------------------------------------------------------------*/
 /*
-VR-Forces C2SIM interface v1.2
+VR-Forces C2SIM interface v1.3
 To run demo on Sandbox: 
 1. start VR Forces; at Config panel clock Launch;
 on Startup panel run Bogaland9; wait until icon shows on map
@@ -83,6 +83,7 @@ std::string stompServerPort;
 static string vrfTerrain;
 const static double degreesToRadians = 57.2957795131L;
 int numberOfObjects = 0;
+int orderCount = 0;
 bool useIbml;
 #define MAX_OBJECTS 100
 std::string objectNames[MAX_OBJECTS];
@@ -265,22 +266,86 @@ void C2SIMinterface::writeAnXmlFile(char* filename, string content) {
 
 }// end writeAnXmlFile()
 
-
-// create a tank object in VR-Forces
-void createTank(DtTextInterface* textIf, DtVector vec, std::string objectId) {
-	textIf->controller()->createEntity(
+// create AH-64 Apache helicopter  TODO: greater variety of platforms
+void createAH64(DtTextInterface* textIf,
+	DtVector vec,
+	std::string objectId,
+	std::string hostilityCode) {
+	std::cout << "CREATEAH64 obj:" << objectId 
+	  << "|hostility:" << hostilityCode << "\n";//debugx
+	if (hostilityCode == "HO")
+		textIf->controller()->createEntity(
 		DtTextInterface::vrfObjectCreatedCb, (void*)"C2SIM",
-		DtEntityType(1, 1, 225, 1, 1, 3, 0), vec,
+		DtEntityType(1, 2, 225, 20, 1, 1, 0), vec,
+		DtForceOpposing, 90.0, objectId);
+	else
+		textIf->controller()->createEntity(
+		DtTextInterface::vrfObjectCreatedCb, (void*)"C2SIM",
+		DtEntityType(1, 2, 225, 20, 1, 1, 0), vec,
 		DtForceFriendly, 90.0, objectId);
+
+	std::cout << "created AH-64 name:" << objectId 
+		<< " hostility:" << hostilityCode << "\n";
 }
 
 
 // create a tank object in VR-Forces
-void createScoutUnit(DtTextInterface* textIf, DtVector vec, std::string objectId) {
-	textIf->controller()->createAggregate(
+void createTank(
+	DtTextInterface* textIf, 
+	DtVector vec, 
+	std::string objectId,
+	std::string hostilityCode) {
+
+	if (hostilityCode == "HO")
+		textIf->controller()->createEntity(
+			DtTextInterface::vrfObjectCreatedCb, (void*)"C2SIM",
+			DtEntityType(1, 1, 225, 1, 1, 3, 0), vec,
+			DtForceOpposing, 90.0, objectId);
+	else
+		textIf->controller()->createEntity(
 		DtTextInterface::vrfObjectCreatedCb, (void*)"C2SIM",
-		DtEntityType(11, 1, 0, 14, 30, 0, 0), vec,
+		DtEntityType(1, 1, 225, 1, 1, 3, 0), vec,
 		DtForceFriendly, 90.0, objectId);
+
+	std::cout << "created TANK name:" << objectId 
+		<< " hostility:" << hostilityCode << "\n";
+}
+
+
+// create an aggregated object in VR-Forces
+int theNextAggregateId = 0;
+void createScoutUnit(
+	DtTextInterface* textIf, 
+	DtVector vec, 
+	std::string objectId,
+	std::string hostilityCode) {
+	
+	DtString pltName = objectId;// "Tank_Plt_" + DtString(theNextAggregateId++);
+
+	unsigned long requestId = textIf->controller()->generateRequestId();
+	DtObjectType oType(DtObjectTypePseudoAggregate,
+		//DtEntityType(11, 1, 0, 14, 30, 0, 0));
+		DtEntityType(11, 1, 225, 13, 3, 0, 1));
+
+	DtList vertices;
+	DtVector *vecPtr = new DtVector(vec);
+	vertices.add(vecPtr);
+
+	if (hostilityCode == "HO")
+		textIf->controller()->sendVrfObjectCreateMsg(
+			DtSimSendToAll, requestId, pltName, oType, vertices,
+			DtString::nullString(), DtAppearance::nullAppearance(),
+			DtForceOpposing, false, false, 0.0, true);
+	else
+		textIf->controller()->sendVrfObjectCreateMsg(
+		DtSimSendToAll, requestId, pltName, oType, vertices,
+		DtString::nullString(), DtAppearance::nullAppearance(),
+		DtForceFriendly, false, false, 0.0, true);
+
+	std::cout << "created aggregate name:" << objectId 
+		<< " hostility:" << hostilityCode << "\n";
+
+	delete vecPtr;
 }
 
 
@@ -341,15 +406,19 @@ void C2SIMinterface::readStomp(
 
 			// loop reading XML documents, 
 			// parsing them into VR-Forces controls 
+			bool showReadyForOrder = true;
 			while (true) {
-
 				inInitializePhase = setInInitializePhase;
-				if (!inInitializePhase || skipInitialize)
+				if ((!inInitializePhase || skipInitialize) && showReadyForOrder){
 					std::cout << "READY FOR C2SIM ORDER\n";
+					showReadyForOrder = false;
+				}
 
 				// read a STOMP message and parse it
 				stompClient.receiveFrame(inputFrame);
-				//std::cout << inputFrame.message.str();//debugx
+				//std::cout << inputFrame.message.str();
+
+				// TODO: detect reports via simple string search and do not parse them
 
 				// use SAX to parse XML from a STOMP frame
 				c2simXmlHandler->C2SIMxmlHandler::startC2SIMParse(units, tasks);
@@ -386,11 +455,17 @@ void C2SIMinterface::readStomp(
 				// check that we parsed something; if not go to next order
 				string parsedRootTag = c2simXmlHandler->getRootTag();
 				if (parsedRootTag.length() == 0)continue;
-
-				// ignore report messages
-				if (parsedRootTag == "CWIX_Position_Report")continue;
-				if (parsedRootTag == "BMLReport")continue;
 				
+				// ignore non-order C2SIM messages
+				// (orders will have root tag C2SIM_Order)
+				if (parsedRootTag == "C2SIM_Message"){
+					showReadyForOrder = false;
+					continue;// to while(true)
+				}
+				if (parsedRootTag == "BMLReport"){
+					showReadyForOrder = false;
+					continue;// to while(true)
+				}
 
 				// check for simulation control message
 				if (parsedRootTag == "C2SIM_Simulation_Control") {
@@ -409,7 +484,7 @@ void C2SIMinterface::readStomp(
 					else if (controlState == "STOPPED") {
 						textIf->setTimeToQuit(true);
 						textIf->setStarted(false);
-						Sleep(1000);
+						Sleep(10000);
 						break;
 					}
 					// set value for inInitializePhase at  
@@ -420,9 +495,10 @@ void C2SIMinterface::readStomp(
 					else if (controlState == "INITIALIZED") {
 						setInInitializePhase = false;
 					}
-						continue;
+					continue;
 				}
 				std::cout << "completed parse of document with root tag " << parsedRootTag << "\n";
+				showReadyForOrder = true;
 
 				// if in the initialize phase the input can only be Military_Organization
 				if (inInitializePhase && !skipInitialize) {
@@ -434,16 +510,17 @@ void C2SIMinterface::readStomp(
 					numberOfUnits = c2simXmlHandler->C2SIMxmlHandler::getNumberOfUnits();
 					if (numberOfUnits < 1) {
 						std::cout << "no units found - can't run simulation\n";
-						Sleep(5000);
+						Sleep(10000);
 						break;
 					}
-					// initialize in VR-Forces units that match this Submitter
-					for (int unitNumber = 0; unitNumber < numberOfUnits; ++unitNumber) {
+					std:: cout << "initialization message contains " << numberOfUnits << " units\n";
 
-						// determine what name we'll use for it; favor UUID
+					// initialize in VR-Forces units that match this Submitter
+					int numberInitialized = 0;
+					for (int unitNumber = 0; unitNumber < numberOfUnits; ++unitNumber) {
+						
+						// determine what name we'll use for it
 						Unit newUnit = units[unitNumber];
-						if (newUnit.submitter == NULL)continue;
-						if (newUnit.submitter != clientId)continue;
 						std::string newObjectId;
 						if (newUnit.name != NULL)
 							newObjectId = newUnit.name;
@@ -451,6 +528,24 @@ void C2SIMinterface::readStomp(
 							std::cerr << "position " << (unitNumber + 1)
 								<< " in Military_Organization has no name - omitting it\n";
 							continue;
+						}
+						if (newUnit.submitter == NULL) {
+							std::cout << "unit " << newUnit.name
+								<< " missing Submitter - cannot create VRF object\n";
+							continue;// to while(true)
+						}
+						std::string submitterString = std::string(newUnit.submitter);
+						if (submitterString != clientId){
+							std::cout << "unit " << newUnit.name
+								<< " Submitter " << submitterString 
+								<< " does not match our clientId "
+								<< clientId << " cannot create VRF object\n";
+							continue;// to while(true)
+						}
+						if (newUnit.hostilityCode == NULL) {
+							std::cout << "unit " << newUnit.name
+								<< " missing Hostility - cannot create VRF object\n";
+							continue;// to while(true)
 						}
 
 						// instantiate the object in VR-Forces
@@ -470,13 +565,18 @@ void C2SIMinterface::readStomp(
 							c2simInterface->convertCoordinates(
 								newUnit.latitude, newUnit.longitude, newUnit.elevationAgl, x, y, z);
 							DtVector newUnitVec(x, y, z);
-							std::string echelon = newUnit.echelon;
-							if (echelon == "SQUAD")
-								createScoutUnit(textIf, newUnitVec, newObjectId);
+							std::string symbolIdString = std::string(newUnit.symbolId);
+							if (symbolIdString.substr(2,4) == "APMH")
+								createAH64(textIf, newUnitVec, newObjectId, newUnit.hostilityCode);
+							else if (strcmp(newUnit.echelon, "SQUAD") == 0)
+								createScoutUnit(textIf, newUnitVec, newObjectId, newUnit.hostilityCode);
 							else
-								createTank(textIf, newUnitVec, newObjectId);
-						}// end if (isNewObject(newObjectId))
+								createTank(textIf, newUnitVec, newObjectId, newUnit.hostilityCode);
+							numberInitialized++;
+
+						}// end if (newUnit.submitter == clientId)
 					}
+					std::cout << "initialized " << numberInitialized << " units\n";
 					// next line probably this will beat the server
 					// message that causes the same effect
 					inInitializePhase = false;
@@ -484,8 +584,9 @@ void C2SIMinterface::readStomp(
 
 				}// end if (inInitializePhase...
 
-				// not control or initialization; must be an oder
+				// not control or initialization; must be an order
 				// loop through all tasks from the order
+				++orderCount;
 				int taskCount = c2simXmlHandler->getNumberOfTasks();
 				std::cout << "order contains " << taskCount << " tasks\n";
 				for (int taskNumber = 0; taskNumber < taskCount; ++taskNumber) {
@@ -493,9 +594,12 @@ void C2SIMinterface::readStomp(
 					// find parameters of the task
 					Task* thisTask = &tasks[taskNumber];
 
-					// Start a thread to execute the task TODO: figure out how to join t2
+					// Start a thread to execute the task
 					string taskId;
-					taskId << (taskNumber + 1);
+					if (orderCount > 1)
+						taskId << "Order" << orderCount << "_Task" << (taskNumber + 1);
+					else
+						taskId << "Task" << (taskNumber + 1);
 					std::thread t2(&C2SIMinterface::executeTask, taskId, textIf,
 						skipInitialize, thisTask, numberOfUnits, units);
 					t2.detach();
@@ -558,43 +662,49 @@ void C2SIMinterface::executeTask(
 	}// end for (int pointNumber...
 
 	// confirm Unit was initialized (if not, skip this task)
-	if (!skipInitialize) {
-		int unitIndex;
+	int unitIndex;
+	if (!skipInitialize) {	
 		for (unitIndex = 0; unitIndex < numberOfUnits; ++unitIndex)
 		if (unitId == units[unitIndex].name)break;
 		if (unitIndex >= numberOfUnits)return;
 	}
-	cout << "C2SIMinterface got order for unitID:" << unitId
-		<< " dateTime:" << dateTime << "\n";
-	std::cout << "starting to issue VRF commands\n";
+	cout << "C2SIMinterface got task for unitID:" << unitId
+		<< " dateTime:" << dateTime << " coordinates:"
+		<< thisTask->latitudes[0] << "/" << thisTask->longitudes[0]
+		<< " actionTask:" << thisTask->actionTaskActivityCode << "\n";
+	std::cout << "starting to create VRF waypoints\n";
 
 	// previously we generated a "new" VRF command at this point
 	// now we're expecting the user to do that on VR-Forces GUI
 	// during startup, giving more flexibility to Sandbox users
 
-	// make a tank object to run on it
-	// TODO: objects other than tanks
+	// make an object to run on it
+	// TODO: more objects
 	int firstWaypoint = 0;
 	if (skipInitialize)
 	if (isNewObject(unitId)) {
 		DtVector vec(x[0], y[0], z[0]);
-		if (unitId == "1/24A1_CAV")
-			createScoutUnit(textIf, vec, unitId);
+		if (unitId == "USA1" || unitId == "USA2")// debugx hack for CWIX
+			createScoutUnit(textIf, vec, unitId, "AFR");
 		else
-			createTank(textIf, vec, unitId);
+			createTank(textIf, vec, unitId, "AFR");
 		firstWaypoint = 1;
 	}
-
+	
 	// create waypoints for all remaining numberOfPoints
+	// TODO: replace this with createRoute()
 	string pointNames[MAXPOINTS];
 	for (int pointNumber = firstWaypoint; pointNumber < numberOfPoints; ++pointNumber) {
 
 		// combine coordinates to a DtVector
 		DtVector vec(x[pointNumber], y[pointNumber], z[pointNumber]);
-
+		
 		// name a point name ending in i (up to 99)
 		std::ostringstream oss;
-		oss << "Task_" << taskId << "_Pt_" << pointNumber;
+		if (numberOfPoints > 1)
+			oss << taskId << "_Pt" << pointNumber;
+		else
+			oss << taskId;
 		pointNames[pointNumber] = oss.str();
 
 		// create a point with these properties
@@ -607,12 +717,24 @@ void C2SIMinterface::executeTask(
 	}
 
 	// wait a little bit 
-	DtSleep(1.);//TODO: (is there a race here?)
+	DtSleep(5.);//TODO: (is there a race here?)
+	std::cout << "starting to issue VRF unit commands\n";
+
+	// send rules of engagement to the units
+	if (thisTask->actionTaskActivityCode != "ATTACK")
+		textIf->controller()->
+			setRulesOfEngagement(DtUUID(unitId), "fire-when-fired-upon", DtSimSendToAll);
 
 	// run the tank to each waypoint and wait until it gets there
-	for (int pointNumber = 1; pointNumber < numberOfPoints; ++pointNumber) {
+	textIf->controller()->run(); // server run command comes too late - do it here
+
+	// when skipInitialize we've already used the first point as initial location
+	int pointNumber = 0;
+	if (skipInitialize)pointNumber = 1;
+	for (; pointNumber < numberOfPoints; ++pointNumber) {
+		std::cout << "object " << unitId << "actiontask " << thisTask->actionTaskActivityCode
+			<< " coordinates " << thisTask->latitudes[0] << "/" << thisTask->longitudes[0] << "\n";
 		textIf->controller()->moveToWaypoint(DtUUID(unitId), DtUUID(pointNames[pointNumber]));
-		if(skipInitialize)textIf->controller()->run();
 		while (textIf->getTaskNumberCompleted() < pointNumber)
 			DtSleep(.1);
 	}

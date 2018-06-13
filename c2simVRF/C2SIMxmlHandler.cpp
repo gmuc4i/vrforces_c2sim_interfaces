@@ -43,6 +43,7 @@ char dataText[MAXCHARARRAY];
 char taskersIntent[MAXCHARARRAY] = "";
 char dateTime[MAXCHARARRAY] = "";
 char unitId[MAXCHARARRAY] = "";
+char actionTaskActivityCode[MAXCHARARRAY] = "";
 char latitude[MAXCHARARRAY];
 char longitude[MAXCHARARRAY];
 char elevation[MAXCHARARRAY];
@@ -70,6 +71,8 @@ bool parseIbml;
 // Tasks for Orders
 static Task* orderTasks;
 int lastTaskIndex = -1;
+Task* thisTask;
+Unit* thisUnit;
 
 // Military Organization data for Units
 static Unit* militaryOrgUnits;
@@ -94,6 +97,7 @@ C2SIMxmlHandler::C2SIMxmlHandler(bool useIbmlRef)
 	taskersIntent[0] = '\0';
 	dateTime[0] = '\0';
 	unitId[0] = '\0';
+	actionTaskActivityCode[0] = '\0';
 	for (int i = 0; i < MAXPOINTS; ++i) {
 		latitudes[i] = new char[MAXCHARARRAY];
 		longitudes[i] = new char[MAXCHARARRAY];
@@ -133,6 +137,11 @@ char* C2SIMxmlHandler::getUnitId()
 	return unitId;
 }
 
+// return value of unitId
+char* C2SIMxmlHandler::getActionTaskActivityCode()
+{
+	return actionTaskActivityCode;
+}
 
 // returns the count of Units from Military_Organization message
 int C2SIMxmlHandler::getNumberOfUnits() {
@@ -172,6 +181,7 @@ void C2SIMxmlHandler::startC2SIMParse(Unit* units, Task* tasks)
 	skipThisDocument = false;
 	foundRootTag = false;
 	foundFinalTag = false;
+	foundInitUnitTag = false;
 	parsingC2simOrder = false;
 	parsingIbmlOrder = false;
 	parsingMilitaryOrg = false;
@@ -201,28 +211,111 @@ void C2SIMxmlHandler::endDocument()
 void C2SIMxmlHandler::startElement(const XMLCh* const name,
 	AttributeList& attributes)
 {
-	// copy name parameter to startTag
+	// copy tG name parameter to startTag
 	C2SIMxmlHandler::copyXMLCh(startTag, name);
-	//std::cout << "START:" << startTag << "|\n";//debugx
+	//std::cout << "START:" << startTag << "|\n";
 	
 	// copy startTag to latestTag
 	strncpy(latestTag, startTag, MAXCHARLENGTH);
+
+	if (parsingC2simOrder) {
+
+		// already found C2SIM_Message 
+		// here we parse higher-level tags that have no data
+
+		// Task tag starts a new tsk
+		if (strncmp(latestTag, taskTag, MAXCHARLENGTH) == 0){
+			
+			// check that we have room for another task 
+			if (lastTaskIndex == MAXTASKS - 1) {
+				std::cerr << "too many tasks for allocated storage - stopping at "
+					<< orderTasks[lastUnitIndex].unitId << "\n";
+				skipThisDocument = true;
+				return;
+			}
+			
+			// increment Tasks count	
+			lastTaskIndex++;
+			thisTask = &orderTasks[lastTaskIndex];
+
+			// reset parse flags and counts for data elements
+			thisTask->performingEntity = NULL;
+			thisTask->unitId = NULL;
+			thisTask->actionTaskActivityCode = NULL;
+			thisTask->dateTime = NULL;
+			thisTask->latitudePointCount = 0;
+			thisTask->longitudePointCount = 0;
+			thisTask->elevationPointCount = 0;
+			foundTaskTag = true;
+			foundPerformingEntity = false;
+
+			// fill the lat/lon/elev string pointer with NULL
+			for (int point = 0; point < MAXPOINTS; ++point) {
+				thisTask->latitudes[point] = "0";
+				thisTask->longitudes[point] = "0";
+				thisTask->elevations[point] = "0";
+			}
+			return;
+		}// end Task parse
+
+		// PerformingEntity - precedes unit Name
+		if (strncmp(latestTag, c2simPerformingEntityTag, MAXCHARLENGTH) == 0) {
+			foundPerformingEntity = true;
+			return;
+		}
+	}// end if (parsingC2simOrder)
+
+	if (parsingMilitaryOrg) {
+		// Unit tag
+		if (strncmp(latestTag, initUnitTag, MAXCHARLENGTH) == 0) {
+			foundInitUnitTag = true;
+
+			// increment Units count	
+			lastUnitIndex++;
+			thisUnit = &militaryOrgUnits[lastUnitIndex];
+
+			// reset parse flags for data elements
+			thisUnit->id = NULL;
+			thisUnit->name = NULL;
+			thisUnit->opStatusCode = NULL;
+			thisUnit->strengthPercent = NULL;
+			thisUnit->hostilityCode = NULL;
+			thisUnit->echelon = NULL;
+			thisUnit->superiorUnit = NULL;
+			thisUnit->latitude = NULL;
+			thisUnit->longitude = NULL;
+			thisUnit->elevationAgl = NULL;
+			thisUnit->forceSide = NULL;
+			thisUnit->submitter = NULL;
+			foundInitUnitTag = true;
+			return;
+		}
+	}// end if (parsingMilitaryOrg)
 	
 	// check for root tag
+	if (foundC2simMessage) {
 
-	// special cases for C2SIM_MilitaryOrganization
-	if (foundC2simMessage &&
-		strncmp(latestTag, militaryOrgRootTag, MAXCHARLENGTH) == 0) {
-		foundRootTag = true;
-		rootTag = startTag;
-		parsingMilitaryOrg = true;
-		std::cout << "received C2SIM_MilitaryOrganization message\n";
+		// C2SIM_MilitaryOrganization tag
+		if (strncmp(latestTag, militaryOrgRootTag, MAXCHARLENGTH) == 0) {
+			foundRootTag = true;
+			rootTag = startTag;
+			parsingMilitaryOrg = true;
+			std::cout << "received C2SIM_MilitaryOrganization message\n";
+		}
+		// C2SIM_Order tag starts a new order
+		else if (strncmp(latestTag, c2simOrderRootTag, MAXCHARLENGTH) == 0){
+			rootTag = startTag;
+			parsingC2simOrder = true;
+			lastTaskIndex = -1;
+			std::cout << "received C2SIM order - will report in C2SIM format\n";
+		}
+		return;
 	}
 	// parser may swallow tags without data - force the issue
-	else if (strncmp(latestTag, initUnitTag, MAXCHARLENGTH) == 0) {
+	if (strncmp(latestTag, initUnitTag, MAXCHARLENGTH) == 0) {
 		characters(L"", 0);
 	}
-	// all cases but C2SIM_MilitaryOrganization
+	// cases that do not follow C2SIM_Message
 	else if (!foundRootTag && !skipThisDocument) {
 
 		// ignore report messages
@@ -231,9 +324,8 @@ void C2SIMxmlHandler::startElement(const XMLCh* const name,
 			rootTag = "";
 			skipThisDocument = true;
 		}
-
 		// look for C2SIM message
-		else if (!foundC2simMessage && !parseIbml &&
+		else if (!parseIbml &&
 			strncmp(startTag, c2simMessageTag, MAXCHARLENGTH) == 0) {
 			foundC2simMessage = true;
 			foundRootTag = true;
@@ -243,12 +335,15 @@ void C2SIMxmlHandler::startElement(const XMLCh* const name,
 		else if (parseIbml && strncmp(latestTag, ibmlOrderRootTag, MAXCHARLENGTH) == 0) {
 			foundRootTag = true;
 			rootTag = startTag;
+			lastTaskIndex = -1;
 			parsingIbmlOrder = true;
 			std::cout << "received IBML09 order - will report in IBML09 format\n";
 		}
 		// otherwise we don't have a root we can use
 		else {
-			std::cerr << "received unexpected root tag:" << startTag << "\n";
+			// when not processing IBML09 - ignore any translated order from server
+			if (!parseIbml && strncmp(latestTag, ibmlOrderRootTag, MAXCHARLENGTH) != 0)
+				std::cerr << "received unexpected root tag:" << startTag << "\n";
 			rootTag = "";
 			skipThisDocument = true;
 		}
@@ -302,31 +397,17 @@ void C2SIMxmlHandler::characters(
 		std::cerr << "WARNING data length " << dataLength << " over config limit of " <<
 		MAXCHARLENGTH << " data truncated begins:" << dataText << "\n";
 	if (skipThisDocument)return;
-	//std::cout << "TAG:" << latestTag << "|DATA:" << dataText << "|\n"; // debugx
-
+	//std::cout << "TAG:" << latestTag << "|DATA:" << dataText << "|\n"; 
+	
 	// look for C2SIM order or control tag inside C2SIM message
 	if (foundC2simMessage) {
 		
-		// C2SIM order inside C2SIM_Message
-		if (strncmp(latestTag, c2simOrderRootTag, MAXCHARLENGTH) == 0) {
-			rootTag = startTag;
-			parsingC2simOrder = true;
-			std::cout << "received C2SIM order - will report in C2SIM format\n";
-			return;
-		}
 		// Control inside C2SIM_Message
 		if (strncmp(latestTag, controlStateTag, MAXCHARLENGTH) == 0) {
 			rootTag = controlRootTag;
 			parsingControlMessage = true;
 			strncpy(controlState, dataText, MAXCHARLENGTH);
 			std::cout << "received C2SIM_Simulation_Control message\n";
-			return;
-		}
-		// C2SIM_MilitaryOrganization inside C2SIM_Message
-		if (strncmp(latestTag, militaryOrgRootTag, MAXCHARLENGTH) == 0) {
-			rootTag = startTag;
-			parsingMilitaryOrg = true;
-			std::cout << "received C2SIM_MilitaryOrganization message\n";
 			return;
 		}
 	}
@@ -337,59 +418,16 @@ void C2SIMxmlHandler::characters(
 	// look for order element tags and copy their data one tag at a time
 
 	// starting here we parse the various possible XML inputs
-	// for our purposes C2SIm and IBML09 are semantically equivalent
+	// for our purposes C2SIM and IBML09 are semantically equivalent
 	// so we store the results in a single set of variables
 
 	// C2SIM Order
 	if (!parseIbml && parsingC2simOrder) {
-		
-		// check that we have room for another task 
-		if (lastTaskIndex == MAXTASKS - 1) {
-			std::cerr << "too many taskss for allocated storage - stopping at "
-				<< orderTasks[lastUnitIndex].unitId << "\n";
-			skipThisDocument = true;
-			return;
-		}
-		Task* thisTask;
 		int dataSize;
-
-		// look for Task tag that starts a new task
-		if (strncmp(latestTag, taskTag, MAXCHARLENGTH) == 0) {
-			
-			// increment Units count	
-			lastTaskIndex++;
-			thisTask = &orderTasks[lastTaskIndex];
-
-			// reset parse flags and counts for data elements
-			thisTask->performingEntity = NULL;
-			thisTask->unitId = NULL;
-			thisTask->dateTime = NULL;
-			thisTask->latitudePointCount = 0;
-			thisTask->longitudePointCount = 0;
-			thisTask->elevationPointCount = 0;
-			foundTaskTag = true;
-			foundPerformingEntity = false;
-
-			// fill the lat/lon/elev string pointer with NULL
-			for (int point = 0; point < MAXPOINTS; ++point) {
-				thisTask->latitudes[point] = "0";
-				thisTask->longitudes[point] = "0";
-				thisTask->elevations[point] = "0";
-			}
-			return;
-		}
 
 		// don't start parsing Order before Task tag
 		if (!foundTaskTag)return;
 		thisTask = &orderTasks[lastTaskIndex];
-
-		// look for PerformingEntity to find the right UnitID
-		if (!foundPerformingEntity) {
-			if (strncmp(latestTag, c2simPerformingEntityTag, MAXCHARLENGTH) == 0) {
-				foundPerformingEntity = true;
-				return;
-			}
-		}
 
 		// look for the UnitId that follows PerformingEntity
 		if (thisTask->unitId == NULL) {
@@ -398,6 +436,16 @@ void C2SIMxmlHandler::characters(
 				dataSize = strlen(dataText) + 1;
 				thisTask->unitId = new char[dataSize];
 				strncpy(thisTask->unitId, dataText, dataSize);
+				return;
+			}
+		}
+
+		// look for actionTaskActivityCode
+		if (thisTask->actionTaskActivityCode == NULL) {
+			if (strncmp(latestTag, c2simActionTaskTag, MAXCHARLENGTH) == 0) {
+				dataSize = strlen(dataText) + 1;
+				thisTask->actionTaskActivityCode = new char[dataSize];
+				strncpy(thisTask->actionTaskActivityCode, dataText, dataSize);
 				return;
 			}
 		}
@@ -459,7 +507,6 @@ void C2SIMxmlHandler::characters(
 			skipThisDocument = true;
 			return;
 		}
-		Task* thisTask;
 		int dataSize;
 
 		// look for Task tag that starts a new task
@@ -473,6 +520,7 @@ void C2SIMxmlHandler::characters(
 			thisTask->performingEntity = NULL;
 			thisTask->unitId = NULL;
 			thisTask->dateTime = NULL;
+			thisTask->actionTaskActivityCode = NULL;
 			thisTask->latitudePointCount = 0;
 			thisTask->longitudePointCount = 0;
 			thisTask->elevationPointCount = 0;
@@ -498,6 +546,16 @@ void C2SIMxmlHandler::characters(
 				dataSize = strlen(dataText) + 1;
 				thisTask->unitId = new char[dataSize];
 				strncpy(thisTask->unitId, dataText, dataSize);
+				return;
+			}
+		}
+		
+		// look for actionTaskActivityCode
+		if (thisTask->actionTaskActivityCode == NULL) {
+			if (strncmp(latestTag, ibmlActionTaskTag, MAXCHARLENGTH) == 0) {
+				dataSize = strlen(dataText) + 1;
+				thisTask->actionTaskActivityCode = new char[dataSize];
+				strncpy(thisTask->actionTaskActivityCode, dataText, dataSize);
 				return;
 			}
 		}
@@ -558,33 +616,8 @@ void C2SIMxmlHandler::characters(
 			skipThisDocument = true;
 			return;
 		}
-		Unit* thisUnit;
 		int dataSize;
-		
-		// look for Unit tag that starts a new unit
-		if (strncmp(latestTag, initUnitTag, MAXCHARLENGTH) == 0) {
-		
-			// increment Units count	
-			lastUnitIndex++;
-			thisUnit = &militaryOrgUnits[lastUnitIndex];
 
-			// reset parse flags for data elements
-			thisUnit->id = NULL;
-			thisUnit->name = NULL;
-			thisUnit->opStatusCode = NULL;
-			thisUnit->strengthPercent = NULL;
-			thisUnit->hostilityCode = NULL;
-			thisUnit->echelon = NULL;
-			thisUnit->superiorUnit = NULL;
-			thisUnit->latitude = NULL;
-			thisUnit->longitude = NULL;
-			thisUnit->elevationAgl = NULL;
-			thisUnit->forceSide = NULL;
-			thisUnit->submitter = NULL;
-			foundInitUnitTag = true;
-			return;
-		}
-		
 		// don't start parsing Military_Organization before Unit tag
 		if (!foundInitUnitTag)return;
 		thisUnit = &militaryOrgUnits[lastUnitIndex];
@@ -699,7 +732,7 @@ void C2SIMxmlHandler::characters(
 			}
 		}
 
-		// look for SymbolIdentifier
+		// look for ForceSide
 		if (thisUnit->forceSide == NULL) {
 			if (strncmp(latestTag, initForceSideTag, MAXCHARLENGTH) == 0) {
 				dataSize = strlen(dataText) + 1;

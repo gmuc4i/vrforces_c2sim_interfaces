@@ -53,6 +53,7 @@ struct Unit {
 struct Task {
 	char* performingEntity;
 	char* unitId;
+	char* actionTaskActivityCode;
 	char* dateTime;
 	std::string latitudes[MAXPOINTS];
 	std::string longitudes[MAXPOINTS];
@@ -78,6 +79,8 @@ class C2SIMxmlHandler : public HandlerBase
 	char* ibmlUnitIdTag = "UnitID";
 	char* c2simPerformingEntityTag = "PerformingEntity";
 	char* c2simUnitIdTag = "Name";
+	char* ibmlActionTaskTag = "WhatCode";
+	char* c2simActionTaskTag = "ActionTaskActivityCode";
 	char* latitudeTag = "Latitude";
 	char* longitudeTag = "Longitude";
 	char* elevationTag = "ElevationAGL";
@@ -113,6 +116,7 @@ public:
 	char* C2SIMxmlHandler::getTaskersIntent();
 	char* C2SIMxmlHandler::getDateTime();
 	char* C2SIMxmlHandler::getUnitId();
+	char* C2SIMxmlHandler::getActionTaskActivityCode();
 	void C2SIMxmlHandler::assembleRoutePoints();
 	std::string C2SIMxmlHandler::getRootTag();
 	bool C2SIMxmlHandler::getOrderTypeIbml();
